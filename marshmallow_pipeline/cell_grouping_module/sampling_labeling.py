@@ -57,7 +57,7 @@ def cell_clustering(table_cluster, col_cluster, x, y, n_cell_clusters_per_col_cl
     cell_clustering_dict = {
         "table_cluster": [],
         "col_cluster": [],
-        "n_cells": [],
+        "n_cells": None,
         "n_init_labels": [],
         "n_produced_cell_clusters": [],
         "n_current_requiered_labels": [],
