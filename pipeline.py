@@ -167,13 +167,6 @@ def main(execution):
         logging.info("Column grouping results are available - loading from disk")
         
 
-    logging.info("Removing the symlinks")
-    for name in os.listdir(tables_path):
-        curr_path = os.path.join(tables_path, name)
-        if os.path.isdir(curr_path):
-            aggregated_lake_path_csv = os.path.join(aggregated_lake_path, name + ".csv")
-            if os.path.exists(aggregated_lake_path_csv):
-                os.remove(aggregated_lake_path_csv)
 
     logging.info("Loading the column grouping results")
     (
@@ -211,6 +204,14 @@ def main(execution):
         classification_mode,
         raha_config
     )
+
+    logging.info("Removing the symlinks")
+    for name in os.listdir(tables_path):
+        curr_path = os.path.join(tables_path, name)
+        if os.path.isdir(curr_path):
+            aggregated_lake_path_csv = os.path.join(aggregated_lake_path, name + ".csv")
+            if os.path.exists(aggregated_lake_path_csv):
+                os.remove(aggregated_lake_path_csv)
 
     time_end = time.time()
     print(time_end - time_start)
