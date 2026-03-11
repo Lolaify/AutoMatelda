@@ -28,6 +28,9 @@ def main(execution):
     sandbox_path = configs["DIRECTORIES"]["sandbox_dir"]
     tables_path = os.path.join(sandbox_path, configs["DIRECTORIES"]["tables_dir"])
 
+    auto_test_path = configs["AUTO-TEST"]["auto_test_path"]
+    sdc_file_name = configs["AUTO-TEST"]["sdc_file_name"]
+
     raha_config = {}
     raha_config['save_results'] = bool(int(configs["RAHA"]['save_results']))
     raha_config['strategy_filtering'] = bool(int(configs["RAHA"]['strategy_filtering']))
@@ -202,7 +205,9 @@ def main(execution):
         save_mediate_res_on_disk,
         pool,
         classification_mode,
-        raha_config
+        raha_config,
+        auto_test_path,
+        sdc_file_name
     )
 
     logging.info("Removing the symlinks")
