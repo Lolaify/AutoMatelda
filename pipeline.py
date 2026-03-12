@@ -30,7 +30,8 @@ def main(execution):
 
     auto_test_path = configs["AUTO-TEST"]["auto_test_path"]
     sdc_file_name = configs["AUTO-TEST"]["sdc_file_name"]
-
+    rerun = configs["AUTO-TEST"]["rerun"]
+    
     raha_config = {}
     raha_config['save_results'] = bool(int(configs["RAHA"]['save_results']))
     raha_config['strategy_filtering'] = bool(int(configs["RAHA"]['strategy_filtering']))
@@ -207,7 +208,8 @@ def main(execution):
         classification_mode,
         raha_config,
         auto_test_path,
-        sdc_file_name
+        sdc_file_name,
+        rerun
     )
 
     logging.info("Removing the symlinks")

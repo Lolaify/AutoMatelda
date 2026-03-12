@@ -2,17 +2,30 @@ import subprocess
 import pandas as pd
 import os
 import ast
+import pickle
 
 
-def load_autotest_df(auto_test_path: str, sdc_file_name: str, output_path: str, table_file_name_santos: str):
+def load_autotest_df(auto_test_path: str, sdc_file_name: str, output_path: str, table_file_name_santos: str, rerun: bool):
+
+    auto_test_output_df = _get_autotest_res(auto_test_path, sdc_file_name, output_path, table_file_name_santos, rerun)
+
+    detected_df = _get_detected_cells(auto_test_output_df, output_path, table_file_name_santos, rerun)
+
+    return detected_df
+
+def _get_autotest_res(auto_test_path: str, sdc_file_name: str, output_path: str, table_file_name_santos: str, rerun: bool):
+    mediate_file_path = os.path.join(output_path, "mediate_files", "auto_test", f"auto_test_res_{table_file_name_santos}.pickle")
+
+    if not rerun and os.path.exists(mediate_file_path):
+        with open(mediate_file_path, "wb+") as handle:
+            return pickle.load(handle)
 
     auto_test_output_df = _run_autotest(auto_test_path, sdc_file_name, output_path, table_file_name_santos)
 
-    dirty_file_path = os.path.join(output_path, "aggregated_lake", table_file_name_santos)
-    dirty_df = pd.read_csv(dirty_file_path, dtype=str)
-    detected_df = _mark_detected_cells(auto_test_output_df, dirty_df)
+    with open(mediate_file_path, "wb+") as handle:
+        pickle.dump(auto_test_output_df, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    return detected_df
+    return auto_test_output_df
 
 
 def _run_autotest(auto_test_path: str, sdc_file_name: str, output_path: str, table_file_name_santos: str) -> pd.DataFrame:
@@ -33,6 +46,22 @@ def _run_autotest(auto_test_path: str, sdc_file_name: str, output_path: str, tab
     auto_test_output_df = pd.read_table(auto_test_output_path, dtype=str)
 
     return auto_test_output_df
+
+def _get_detected_cells(auto_test_output_df: pd.DataFrame, output_path: str, table_file_name_santos: str, rerun: bool):
+    mediate_file_path = os.path.join(output_path, "mediate_files", "auto_test",
+                                     f"auto_test_detected_cells_{table_file_name_santos}.pickle")
+    if not rerun and os.path.exists(mediate_file_path):
+        with open(mediate_file_path, "wb+") as handle:
+            return pickle.load(handle)
+
+    dirty_file_path = os.path.join(output_path, "aggregated_lake", table_file_name_santos)
+    dirty_df = pd.read_csv(dirty_file_path, dtype=str)
+    detected_errors = _mark_detected_cells(auto_test_output_df, dirty_df)
+
+    with open(mediate_file_path, "wb+") as handle:
+        pickle.dump(detected_errors, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    return detected_errors
 
 def _mark_detected_cells(auto_test_output_df: pd.DataFrame, dirty_df: pd.DataFrame) -> pd.DataFrame:
     """

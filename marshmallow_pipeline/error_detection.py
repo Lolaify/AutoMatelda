@@ -43,7 +43,8 @@ def error_detector(
     classification_mode,
     raha_config,
     auto_test_path,
-    sdc_file_name
+    sdc_file_name,
+    rerun
 ):
     logging.info("Starting error detection")
 
@@ -54,7 +55,7 @@ def error_detector(
     if cell_feature_generator_enabled:
         logging.info("Generating cell features enabled")
         features_dict, tables_tuples_dict = get_cells_features(
-            sandbox_path, output_path, table_charset_dict, tables_dict, dirty_files_name, clean_files_name, save_mediate_res_on_disk, pool, raha_config, auto_test_path, sdc_file_name
+            sandbox_path, output_path, table_charset_dict, tables_dict, dirty_files_name, clean_files_name, save_mediate_res_on_disk, pool, raha_config, auto_test_path, sdc_file_name, rerun
         )
     else:
         logging.info("Generating cell features disabled, loading from previous results from disk")
