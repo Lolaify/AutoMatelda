@@ -3,10 +3,9 @@ import pandas as pd
 import os
 import ast
 import pickle
-
+import logging
 
 def load_autotest_df(auto_test_config, output_path: str, table_file_name_santos: str):
-
 
     auto_test_output_df = _get_autotest_res(auto_test_config["auto_test_path"], auto_test_config["sdc_file_name"], output_path, table_file_name_santos, auto_test_config["rerun"])
 
@@ -18,9 +17,11 @@ def _get_autotest_res(auto_test_path: str, sdc_file_name: str, output_path: str,
     mediate_file_path = os.path.join(output_path, "mediate_files", "auto_test", f"auto_test_res_{table_file_name_santos}.pickle")
 
     if not rerun and os.path.exists(mediate_file_path):
+        logging.debug("loading Auto-Test result for %s from disk", table_file_name_santos)
         with open(mediate_file_path, "wb+") as handle:
             return pickle.load(handle)
 
+    logging.debug("scanning %s with Auto-Test", table_file_name_santos)
     auto_test_output_df = _run_autotest(auto_test_path, sdc_file_name, output_path, table_file_name_santos)
 
     with open(mediate_file_path, "wb+") as handle:
@@ -33,9 +34,9 @@ def _run_autotest(auto_test_path: str, sdc_file_name: str, output_path: str, tab
     """
     Runs Autotest, returns results as DataFrame
     """
-    dirty_file_path = os.path.join(output_path, "aggregated_lake", table_file_name_santos)
+    dirty_file_path = os.path.join(os.getcwd(), output_path, "aggregated_lake", table_file_name_santos)
     res_file_name = f"{sdc_file_name}_on_{table_file_name_santos}"
-    sdc_path = os.path.join("results/SDC")
+    sdc_path = os.path.join("results/SDC", sdc_file_name)
     result = subprocess.run(
         ['conda', 'run', '-n', 'VENV', 'python3', './online_detect.py', dirty_file_path, sdc_path],
         text=True,
