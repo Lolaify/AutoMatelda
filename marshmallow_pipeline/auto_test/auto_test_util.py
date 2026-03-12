@@ -5,11 +5,12 @@ import ast
 import pickle
 
 
-def load_autotest_df(auto_test_path: str, sdc_file_name: str, output_path: str, table_file_name_santos: str, rerun: bool):
+def load_autotest_df(auto_test_config, output_path: str, table_file_name_santos: str):
 
-    auto_test_output_df = _get_autotest_res(auto_test_path, sdc_file_name, output_path, table_file_name_santos, rerun)
 
-    detected_df = _get_detected_cells(auto_test_output_df, output_path, table_file_name_santos, rerun)
+    auto_test_output_df = _get_autotest_res(auto_test_config["auto_test_path"], auto_test_config["sdc_file_name"], output_path, table_file_name_santos, auto_test_config["rerun"])
+
+    detected_df = _get_detected_cells(auto_test_output_df, output_path, table_file_name_santos, auto_test_config["rerun"])
 
     return detected_df
 
