@@ -18,7 +18,7 @@ def _get_autotest_res(auto_test_path: str, sdc_file_name: str, output_path: str,
 
     if not rerun and os.path.exists(mediate_file_path):
         logging.debug("loading Auto-Test result for %s from disk", table_file_name_santos)
-        with open(mediate_file_path, "wb+") as handle:
+        with open(mediate_file_path, "rb") as handle:
             return pickle.load(handle)
 
     logging.debug("scanning %s with Auto-Test", table_file_name_santos)
@@ -54,7 +54,7 @@ def _get_detected_cells(auto_test_output_df: pd.DataFrame, output_path: str, tab
     mediate_file_path = os.path.join(output_path, "mediate_files", "auto_test",
                                      f"auto_test_detected_cells_{table_file_name_santos}.pickle")
     if not rerun and os.path.exists(mediate_file_path):
-        with open(mediate_file_path, "wb+") as handle:
+        with open(mediate_file_path, "rb") as handle:
             return pickle.load(handle)
 
     dirty_file_path = os.path.join(output_path, "aggregated_lake", table_file_name_santos)
