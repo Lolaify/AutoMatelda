@@ -31,7 +31,7 @@ def main(execution):
     auto_test_config = {
         "auto_test_path": configs["AUTO-TEST"]["auto_test_path"],
         "sdc_file_name" : configs["AUTO-TEST"]["sdc_file_name"],
-        "rerun"         : configs["AUTO-TEST"]["rerun"]
+        "rerun"         : bool(int(configs["AUTO-TEST"]["rerun"]))
     }
 
     raha_config = {}

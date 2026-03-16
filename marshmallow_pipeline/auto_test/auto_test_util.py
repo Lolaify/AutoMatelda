@@ -23,10 +23,9 @@ def _get_autotest_res(auto_test_path: str, sdc_file_name: str, output_path: str,
 
     logging.debug("scanning %s with Auto-Test", table_file_name_santos)
     auto_test_output_df = _run_autotest(auto_test_path, sdc_file_name, output_path, table_file_name_santos)
-
+    os.makedirs(os.path.dirname(mediate_file_path), exist_ok=True)
     with open(mediate_file_path, "wb+") as handle:
         pickle.dump(auto_test_output_df, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
     return auto_test_output_df
 
 
@@ -35,7 +34,7 @@ def _run_autotest(auto_test_path: str, sdc_file_name: str, output_path: str, tab
     Runs Autotest, returns results as DataFrame
     """
     dirty_file_path = os.path.join(os.getcwd(), output_path, "aggregated_lake", table_file_name_santos)
-    res_file_name = f"{sdc_file_name}_on_{table_file_name_santos}"
+    res_file_name = f"{os.path.splitext(os.path.basename(sdc_file_name))[0]}_on_{table_file_name_santos}"
     sdc_path = os.path.join("results/SDC", sdc_file_name)
     result = subprocess.run(
         ['conda', 'run', '-n', 'VENV', 'python3', './online_detect.py', dirty_file_path, sdc_path],
@@ -45,8 +44,10 @@ def _run_autotest(auto_test_path: str, sdc_file_name: str, output_path: str, tab
     )
     result.check_returncode()  # raises CalledProcessError if autotest failed
     auto_test_output_path = os.path.join(auto_test_path, "results/detected_outliers", res_file_name)
-    auto_test_output_df = pd.read_table(auto_test_output_path, dtype=str)
-
+    if os.path.exists(auto_test_output_path):
+        auto_test_output_df = pd.read_table(auto_test_output_path, dtype=str)
+    else:
+        auto_test_output_df = pd.DataFrame(columns=['header', 'outlier', 'conf', 'dist_val', 'SDC'])
     return auto_test_output_df
 
 def _get_detected_cells(auto_test_output_df: pd.DataFrame, output_path: str, table_file_name_santos: str, rerun: bool):
