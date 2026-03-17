@@ -195,6 +195,7 @@ def get_cells_in_cluster(group_df, col_cluster, features_dict):
     value_temp = []
     X_temp = []
     y_temp = []
+    auto_test_labels = []
     key_temp = []
     datacells_uids = {}
     current_local_cell_uid = 0
@@ -233,6 +234,11 @@ def get_cells_in_cluster(group_df, col_cluster, features_dict):
                         (row["table_id"], row["col_id"], cell_idx, "gt")
                     ].tolist()
                 )
+                auto_test_labels.append(
+                    features_dict[
+                        (row["table_id"], row["col_id"], cell_idx, "at")
+                    ].tolist()
+                )
                 cell_values_dict[len(X_temp) - 1] = str(row["col_value"][cell_idx])
                 key_temp.append((row["table_id"], row["col_id"], cell_idx))
                 datacells_uids[
@@ -267,6 +273,7 @@ def get_cells_in_cluster(group_df, col_cluster, features_dict):
         "value_temp": value_temp,
         "X_temp": X_temp,
         "y_temp": y_temp,
+        "auto_test_labels": auto_test_labels,
         "key_temp": key_temp,
         "datacells_uids": datacells_uids,
     }

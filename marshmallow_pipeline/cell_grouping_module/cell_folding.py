@@ -20,6 +20,7 @@ def col_clu_cell_clustering(
         col_cluster,
         cell_cluster_cells_dict["X_temp"],
         cell_cluster_cells_dict["y_temp"],
+        cell_cluster_cells_dict["auto_test_labels"],
         n_cell_clusters_per_col_cluster,
         n_cores,
         labels_per_cell_group

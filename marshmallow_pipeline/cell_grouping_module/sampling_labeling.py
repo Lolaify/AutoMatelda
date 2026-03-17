@@ -45,7 +45,7 @@ def get_n_labels(cluster_sizes_df, labeling_budget, min_num_labes_per_col_cluste
     return cluster_sizes_df
 
 
-def cell_clustering(table_cluster, col_cluster, x, y, n_cell_clusters_per_col_cluster, n_cores, labels_per_cell_group):
+def cell_clustering(table_cluster, col_cluster, x, y, auto_test_labels,  n_cell_clusters_per_col_cluster, n_cores, labels_per_cell_group):
     # logging.info(
     #     "Cell Clustering - table_cluster: %s, col_cluster: %s",
     #     table_cluster,
@@ -54,6 +54,7 @@ def cell_clustering(table_cluster, col_cluster, x, y, n_cell_clusters_per_col_cl
     clustering = None
     cells_per_cluster = {}
     errors_per_cluster = {}
+    auto_test_labels_per_cluster = {}
     cell_clustering_dict = {
         "table_cluster": [],
         "col_cluster": [],
@@ -81,9 +82,12 @@ def cell_clustering(table_cluster, col_cluster, x, y, n_cell_clusters_per_col_cl
             cells_per_cluster[cell[1]].append(cell[0])
             if y[cell[0]] == 1:
                 errors_per_cluster[cell[1]] += 1
+            if auto_test_labels[cell[0]] == 1:
+                auto_test_labels_per_cluster[cell[1]] += 1
         else:
             cells_per_cluster[cell[1]] = [cell[0]]
             errors_per_cluster[cell[1]] = y[cell[0]]
+            auto_test_labels_per_cluster[cell[1]] = auto_test_labels[cell[0]]
 
     cell_clustering_dict["table_cluster"] = table_cluster
     cell_clustering_dict["col_cluster"] = col_cluster
@@ -98,6 +102,7 @@ def cell_clustering(table_cluster, col_cluster, x, y, n_cell_clusters_per_col_cl
     )
     cell_clustering_dict["cells_per_cluster"] = cells_per_cluster
     cell_clustering_dict["errors_per_cluster"] = errors_per_cluster
+    cell_clustering_dict["auto_test_labels_per_cluster"] = auto_test_labels_per_cluster
 
     return cell_clustering_dict
 
