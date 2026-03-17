@@ -95,7 +95,7 @@ def _mark_detected_cells(auto_test_output_df: pd.DataFrame, dirty_df: pd.DataFra
 
 
         if column_name in dirty_df.columns:
-            for error_value in error_values:
+            for error_value in parsed:
                 mask = dirty_df[column_name].fillna('') == str(error_value)
                 detected_errors.loc[mask, column_name] = True
         else:
