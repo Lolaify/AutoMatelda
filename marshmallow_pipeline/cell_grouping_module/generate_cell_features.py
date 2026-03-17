@@ -7,13 +7,14 @@ import itertools
 import subprocess
 import time
 
+from marshmallow_pipeline.auto_test.auto_test_util import load_autotest_df
 from marshmallow_pipeline.utils.read_data import read_csv
 from marshmallow_pipeline.cell_grouping_module.generate_raha_features import (
     generate_raha_features,
 )
 
 
-def get_cells_features(sandbox_path, output_path, table_char_set_dict, tables_dict, dirty_files_name, clean_files_name, save_mediate_res_on_disk, pool, raha_config):
+def get_cells_features(sandbox_path, output_path, table_char_set_dict, tables_dict, dirty_files_name, clean_files_name, save_mediate_res_on_disk, pool, raha_config, auto_test_config):
     start_time = time.time()
     try:
         list_dirs_in_snd = os.listdir(sandbox_path)
@@ -24,7 +25,7 @@ def get_cells_features(sandbox_path, output_path, table_char_set_dict, tables_di
         for table in list_dirs_in_snd:
              if not table.startswith("."):
                 features_dict_tmp, tables_tuples_tmp, column_feature_names = \
-                    generate_cell_features(table, sandbox_path, tables_dict[table], table_char_set_dict, dirty_files_name, clean_files_name, pool, raha_config)
+                    generate_cell_features(table, sandbox_path, output_path, tables_dict[table], table_char_set_dict, dirty_files_name, clean_files_name, pool, raha_config, auto_test_config)
                 features_dict_list.append(features_dict_tmp)
                 tables_tuples_list.append(tables_tuples_tmp)
         features_dict = {k: v for d in features_dict_list for k, v in d.items()}
@@ -42,7 +43,7 @@ def get_cells_features(sandbox_path, output_path, table_char_set_dict, tables_di
     logging.info("Cell features generation time: " + str(end_time - start_time))
     return features_dict, tables_tuples_dict
 
-def generate_cell_features(table, sandbox_path, table_file_name_santos, table_char_set_dict, dirty_files_name, clean_files_name, pool, raha_config):
+def generate_cell_features(table, sandbox_path, output_path, table_file_name_santos, table_char_set_dict, dirty_files_name, clean_files_name, pool, raha_config, auto_test_config):
     logging.info("Generate cell features; Table: %s", table)
     features_dict = {}
     table_tuples_dict = {}
@@ -107,6 +108,21 @@ def generate_cell_features(table, sandbox_path, table_file_name_santos, table_ch
                         table_file_name_santos.encode()
                     ).hexdigest()
                 )]["tuples"][row_idx] = dirty_df.iloc[row_idx].tolist()
+
+        logging.info("Running Auto-Test on %s", table)
+        auto_test_detected_df = load_autotest_df(auto_test_config, output_path, table_file_name_santos)
+        for col_idx, col_name in enumerate(auto_test_detected_df.columns):
+            for row_idx in range(len(auto_test_detected_df[col_name])):
+                features_dict[
+                    (
+                        hashlib.md5(
+                            table_file_name_santos.encode()
+                        ).hexdigest(),
+                        col_idx,
+                        row_idx,
+                        "at",
+                    )
+                ] = auto_test_detected_df[col_name][row_idx]
 
         dirty_df.columns = clean_df.columns
         diff = dirty_df.compare(clean_df, keep_shape=True)
@@ -179,6 +195,7 @@ def get_cells_in_cluster(group_df, col_cluster, features_dict):
     value_temp = []
     X_temp = []
     y_temp = []
+    auto_test_labels = []
     key_temp = []
     datacells_uids = {}
     current_local_cell_uid = 0
@@ -217,6 +234,11 @@ def get_cells_in_cluster(group_df, col_cluster, features_dict):
                         (row["table_id"], row["col_id"], cell_idx, "gt")
                     ].tolist()
                 )
+                auto_test_labels.append(
+                    features_dict[
+                        (row["table_id"], row["col_id"], cell_idx, "at")
+                    ].tolist()
+                )
                 cell_values_dict[len(X_temp) - 1] = str(row["col_value"][cell_idx])
                 key_temp.append((row["table_id"], row["col_id"], cell_idx))
                 datacells_uids[
@@ -251,6 +273,7 @@ def get_cells_in_cluster(group_df, col_cluster, features_dict):
         "value_temp": value_temp,
         "X_temp": X_temp,
         "y_temp": y_temp,
+        "auto_test_labels": auto_test_labels,
         "key_temp": key_temp,
         "datacells_uids": datacells_uids,
     }

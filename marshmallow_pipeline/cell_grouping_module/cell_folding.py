@@ -20,6 +20,7 @@ def col_clu_cell_clustering(
         col_cluster,
         cell_cluster_cells_dict["X_temp"],
         cell_cluster_cells_dict["y_temp"],
+        cell_cluster_cells_dict["auto_test_labels"],
         n_cell_clusters_per_col_cluster,
         n_cores,
         labels_per_cell_group
@@ -85,7 +86,7 @@ def cell_cluster_sampling_labeling(cell_clustering_df, cell_cluster_cells_dict, 
                 gbc, predicted = classify(X_train, y_train, X_test)
             elif classification_mode == 1:
                 X_train, y_train, X_test, y_test, y_cell_ids, predicted = get_train_test_sets_per_col(
-                    X_temp, y_temp, samples_dict, cell_clustering_df, cell_cluster_cells_dict["datacells_uids"], output_path
+                    X_temp, y_temp, auto_test_labels, samples_dict, cell_clustering_df, cell_cluster_cells_dict["datacells_uids"], output_path
                 )
                 
     except Exception as e:

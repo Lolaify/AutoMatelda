@@ -44,7 +44,7 @@ def get_train_test_sets(X_temp, y_temp, samples_dict, cell_clustering_df):
     logging.debug("Length of X_train: %s", len(X_train))
     return X_train, y_train, X_test, y_test, y_cell_ids
 
-def get_train_test_sets_per_col(X_temp, y_temp, samples_dict, cell_clustering_df, uids, output_path):
+def get_train_test_sets_per_col(X_temp, y_temp, auto_test_labels, samples_dict, cell_clustering_df, uids, output_path):
     logging.debug("Train-Test set preparation")
     cells_per_cluster = cell_clustering_df["cells_per_cluster"].values[0]
     samples_df = pd.DataFrame(samples_dict)

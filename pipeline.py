@@ -28,6 +28,12 @@ def main(execution):
     sandbox_path = configs["DIRECTORIES"]["sandbox_dir"]
     tables_path = os.path.join(sandbox_path, configs["DIRECTORIES"]["tables_dir"])
 
+    auto_test_config = {
+        "auto_test_path": configs["AUTO-TEST"]["auto_test_path"],
+        "sdc_file_name" : configs["AUTO-TEST"]["sdc_file_name"],
+        "rerun"         : bool(int(configs["AUTO-TEST"]["rerun"]))
+    }
+
     raha_config = {}
     raha_config['save_results'] = bool(int(configs["RAHA"]['save_results']))
     raha_config['strategy_filtering'] = bool(int(configs["RAHA"]['strategy_filtering']))
@@ -167,13 +173,6 @@ def main(execution):
         logging.info("Column grouping results are available - loading from disk")
         
 
-    logging.info("Removing the symlinks")
-    for name in os.listdir(tables_path):
-        curr_path = os.path.join(tables_path, name)
-        if os.path.isdir(curr_path):
-            aggregated_lake_path_csv = os.path.join(aggregated_lake_path, name + ".csv")
-            if os.path.exists(aggregated_lake_path_csv):
-                os.remove(aggregated_lake_path_csv)
 
     logging.info("Loading the column grouping results")
     (
@@ -209,8 +208,17 @@ def main(execution):
         save_mediate_res_on_disk,
         pool,
         classification_mode,
-        raha_config
+        raha_config,
+        auto_test_config
     )
+
+    logging.info("Removing the symlinks")
+    for name in os.listdir(tables_path):
+        curr_path = os.path.join(tables_path, name)
+        if os.path.isdir(curr_path):
+            aggregated_lake_path_csv = os.path.join(aggregated_lake_path, name + ".csv")
+            if os.path.exists(aggregated_lake_path_csv):
+                os.remove(aggregated_lake_path_csv)
 
     time_end = time.time()
     print(time_end - time_start)

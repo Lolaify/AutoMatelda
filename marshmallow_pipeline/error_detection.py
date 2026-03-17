@@ -41,7 +41,8 @@ def error_detector(
     save_mediate_res_on_disk,
     pool,
     classification_mode,
-    raha_config
+    raha_config,
+    auto_test_config
 ):
     logging.info("Starting error detection")
 
@@ -52,7 +53,7 @@ def error_detector(
     if cell_feature_generator_enabled:
         logging.info("Generating cell features enabled")
         features_dict, tables_tuples_dict = get_cells_features(
-            sandbox_path, output_path, table_charset_dict, tables_dict, dirty_files_name, clean_files_name, save_mediate_res_on_disk, pool, raha_config
+            sandbox_path, output_path, table_charset_dict, tables_dict, dirty_files_name, clean_files_name, save_mediate_res_on_disk, pool, raha_config, auto_test_config
         )
     else:
         logging.info("Generating cell features disabled, loading from previous results from disk")
@@ -73,7 +74,10 @@ def error_detector(
         logging.info("Cell Clustering")
         start_time = time.time()
         col_group_file_names = [file_name for file_name in os.listdir(col_groups_dir) if ".pickle" in file_name]
-        n_processes = min((len(col_group_file_names), os.cpu_count()))
+        n_processes = min((len(col_group_file_names), int(os.cpu_count() or 0)))
+        if(n_processes == 0):
+            raise RuntimeError("Unable to determine CPU count")
+        
         # logging.debug("Number of processes: %s", str(n_processes))
 
         table_clusters = []

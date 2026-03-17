@@ -1,10 +1,10 @@
 run:
-	conda run --no-capture-output -n matelda python pipeline.py
+	conda run --no-capture-output -n automatelda python pipeline.py
 
 install:
-	conda create -n matelda python=3.10
-	conda run --no-capture-output -n matelda pip install -r requirements.txt
-	conda run --no-capture-output -n matelda python -m nltk.downloader stopwords
+	conda create -n automatelda python=3.10
+	conda run --no-capture-output -n automatelda pip install -r requirements.txt
+	conda run --no-capture-output -n automatelda python -m nltk.downloader stopwords
 
 setup-santos:
 	mkdir -p marshmallow_pipeline/santos/benchmark/
@@ -21,7 +21,7 @@ setup-santos:
 	conda run --no-capture-output -n matelda python3 marshmallow_pipeline/santos/codes/Yago_subclass_score.py
 
 uninstall:
-	conda remove -n matelda --all
+	conda remove -n automatelda --all
 
 .PHONY: run, install, uninstall, setup-santos
 .DEFAULT_GOAL := run
