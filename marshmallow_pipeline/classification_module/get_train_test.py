@@ -65,6 +65,10 @@ def get_train_test_sets_per_col(X_temp, y_temp, auto_test_labels, samples_dict, 
     X_train, y_train, X_test, y_test, y_cell_ids, predicted = [], [], [], [], [], []    
     clusters = samples_df["cell_cluster"].unique().tolist()
     logging.debug("Clusters: %s", clusters)
+    count_extra_labels_due_to_auto_test = 0
+    count_propagation_and_auto_test_agreements = 0
+    count_total_dirty_labels = 0
+    count_total_clean_labels = 0
     s_time = time.time()
     for key in clusters:
         try:
@@ -107,9 +111,15 @@ def get_train_test_sets_per_col(X_temp, y_temp, auto_test_labels, samples_dict, 
                         # trust auto-test and label as error. This prevents missing errors.
                         if auto_test_label == 1 and cell_cluster_final_label == 0:
                             label_to_use = 1  # Override with error label
+                            count_extra_labels_due_to_auto_test += 1
                         else:
+                            if auto_test_label == cell_cluster_final_label and auto_test_label == 1:
+                                count_propagation_and_auto_test_agreements += 1
                             label_to_use = cell_cluster_final_label  # Use cluster consensus
-                        
+                        if label_to_use == 0:
+                            count_total_clean_labels += 1
+                        else:
+                            count_total_dirty_labels += 1
                         # Add propagated label (or auto-test override) to training set
                         if cell_col not in y_train_cols:
                             y_train_cols[cell_col] = [label_to_use]
@@ -125,6 +135,10 @@ def get_train_test_sets_per_col(X_temp, y_temp, auto_test_labels, samples_dict, 
                         y_cell_ids_cols[cell_col].append(cell)
         except Exception as e:
             logging.error("Error in get_train_test_sets: %s", e)
+    logging.info("Extra labels added due to Auto-Test overrides: %s", count_extra_labels_due_to_auto_test)
+    logging.info("Agreements between cluster consensus and Auto-Test: %s", count_propagation_and_auto_test_agreements)
+    logging.info("Total clean labels in training set: %s", count_total_clean_labels)
+    logging.info("Total dirty labels in training set: %s", count_total_dirty_labels)
     logging.debug("*******Time for train-test set preparation: %s", time.time() - s_time)
     s_time = time.time()
     logging.debug("Start classification Per Column")
