@@ -100,10 +100,21 @@ def get_train_test_sets_per_col(X_temp, y_temp, auto_test_labels, samples_dict, 
                         else:
                             y_train_cols[cell_col].append(y_temp[cell])
                     else:
-                        if cell_col not in y_train_cols:
-                            y_train_cols[cell_col] = [cell_cluster_final_label]
+                        auto_test_label = auto_test_labels[cell]
+                        
+                        # AUTO-TEST OVERRIDE LOGIC:
+                        # If auto-test detected an error (1) but cluster consensus says clean (0),
+                        # trust auto-test and label as error. This prevents missing errors.
+                        if auto_test_label == 1 and cell_cluster_final_label == 0:
+                            label_to_use = 1  # Override with error label
                         else:
-                            y_train_cols[cell_col].append(cell_cluster_final_label)
+                            label_to_use = cell_cluster_final_label  # Use cluster consensus
+                        
+                        # Add propagated label (or auto-test override) to training set
+                        if cell_col not in y_train_cols:
+                            y_train_cols[cell_col] = [label_to_use]
+                        else:
+                            y_train_cols[cell_col].append(label_to_use)
                     if cell_col not in X_test_cols:
                         X_test_cols[cell_col] = [X_temp[cell]]
                         y_test_cols[cell_col] = [y_temp[cell]]
