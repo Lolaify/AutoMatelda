@@ -121,7 +121,7 @@ def process_col_group_cell_results(key, unique_cells_local_index_collection, y_l
     all_predicted_as_one = 0
     for cell in all_cell_results:
         all_predicted_as_one += 1 if cell["predicted"] else 0
-    logging.debug("Done with col group: ", key, all_predicted_as_one)
+    logging.debug("Done with col group %s: %s", key, all_predicted_as_one)
     return all_cell_results
 
 def create_predictions_dict(
