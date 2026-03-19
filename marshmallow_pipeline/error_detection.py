@@ -149,7 +149,7 @@ def error_detector(
     results = []
     for table_cluster in cell_cluster_cells_dict_all:
         for col_cluster in cell_cluster_cells_dict_all[table_cluster]:
-            result = test(df_n_labels, output_path, all_cell_clusters_records, cell_cluster_cells_dict_all, n_cores, save_mediate_res_on_disk, classification_mode, tables_tuples_dict, labels_per_cell_group, col_cluster, table_cluster)
+            result = test(df_n_labels, output_path, all_cell_clusters_records, cell_cluster_cells_dict_all, n_cores, save_mediate_res_on_disk, classification_mode, tables_tuples_dict, labels_per_cell_group, col_cluster, table_cluster, auto_test_config)
             results.append(result)
     n_user_labeled_cells = 0
     for result in results:
@@ -193,7 +193,7 @@ def error_detector(
     )
 
 
-def test(df_n_labels, output_path, all_cell_clusters_records, cell_cluster_cells_dict_all, n_cores, save_mediate_res_on_disk, classification_mode, tables_tuples_dict, labels_per_cell_group, col_cluster, table_cluster):
+def test(df_n_labels, output_path, all_cell_clusters_records, cell_cluster_cells_dict_all, n_cores, save_mediate_res_on_disk, classification_mode, tables_tuples_dict, labels_per_cell_group, col_cluster, table_cluster, auto_test_config):
     logging.info("Starting test; Column cluster: %s; Table cluster %s", col_cluster, table_cluster)
     original_data_keys = []
     unique_cells_local_index_collection = {}
@@ -213,7 +213,7 @@ def test(df_n_labels, output_path, all_cell_clusters_records, cell_cluster_cells
         col_cluster
     ]
     cell_cluster_sampling_labeling_dict, cell_clustering_df, samples_dict, n_user_labeled_cells = cell_cluster_sampling_labeling(
-        cell_clustering_df, cell_cluster_cells_dict, n_cores, classification_mode, tables_tuples_dict, labels_per_cell_group, output_path
+        cell_clustering_df, cell_cluster_cells_dict, n_cores, classification_mode, tables_tuples_dict, labels_per_cell_group, output_path, auto_test_config
     )
 
     if save_mediate_res_on_disk:
