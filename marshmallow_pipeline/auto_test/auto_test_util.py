@@ -7,22 +7,27 @@ import logging
 
 def load_autotest_df(auto_test_config, output_path: str, table_file_name_santos: str):
 
-    auto_test_output_df = _get_autotest_res(auto_test_config["auto_test_path"], auto_test_config["sdc_file_name"], output_path, table_file_name_santos, auto_test_config["rerun"])
+    if not auto_test_config["rerun"]:
+        detected_df = _load_from_pickle(f"auto_test_detected_cells_{table_file_name_santos}.pickle", output_path)
+        if detected_df is not None:
+            return detected_df
 
-    detected_df = _get_detected_cells(auto_test_output_df, output_path, table_file_name_santos, auto_test_config["rerun"])
+    auto_test_output_df = _get_autotest_res(auto_test_config, output_path, table_file_name_santos)
+
+    detected_df = _get_detected_cells(auto_test_output_df, output_path, table_file_name_santos)
 
     return detected_df
 
-def _get_autotest_res(auto_test_path: str, sdc_file_name: str, output_path: str, table_file_name_santos: str, rerun: bool):
+def _get_autotest_res(auto_test_config, output_path: str, table_file_name_santos: str):
     mediate_file_path = os.path.join(output_path, "mediate_files", "auto_test", f"auto_test_res_{table_file_name_santos}.pickle")
 
-    if not rerun and os.path.exists(mediate_file_path):
-        logging.debug("loading Auto-Test result for %s from disk", table_file_name_santos)
-        with open(mediate_file_path, "rb") as handle:
-            return pickle.load(handle)
+    if not auto_test_config["rerun"]:
+        auto_test_output_df = _load_from_pickle(f"auto_test_res_{table_file_name_santos}.pickle", output_path)
+        if auto_test_output_df is not None:
+            return auto_test_output_df
 
     logging.debug("scanning %s with Auto-Test", table_file_name_santos)
-    auto_test_output_df = _run_autotest(auto_test_path, sdc_file_name, output_path, table_file_name_santos)
+    auto_test_output_df = _run_autotest(auto_test_config["auto_test_path"], auto_test_config["sdc_file_name"], output_path, table_file_name_santos)
     os.makedirs(os.path.dirname(mediate_file_path), exist_ok=True)
     with open(mediate_file_path, "wb+") as handle:
         pickle.dump(auto_test_output_df, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -50,12 +55,9 @@ def _run_autotest(auto_test_path: str, sdc_file_name: str, output_path: str, tab
         auto_test_output_df = pd.DataFrame(columns=['header', 'outlier', 'conf', 'dist_val', 'SDC'])
     return auto_test_output_df
 
-def _get_detected_cells(auto_test_output_df: pd.DataFrame, output_path: str, table_file_name_santos: str, rerun: bool):
+def _get_detected_cells(auto_test_output_df: pd.DataFrame, output_path: str, table_file_name_santos: str):
     mediate_file_path = os.path.join(output_path, "mediate_files", "auto_test",
                                      f"auto_test_detected_cells_{table_file_name_santos}.pickle")
-    if not rerun and os.path.exists(mediate_file_path):
-        with open(mediate_file_path, "rb") as handle:
-            return pickle.load(handle)
 
     dirty_file_path = os.path.join(output_path, "aggregated_lake", table_file_name_santos)
     dirty_df = pd.read_csv(dirty_file_path, dtype=str)
@@ -102,3 +104,21 @@ def _mark_detected_cells(auto_test_output_df: pd.DataFrame, dirty_df: pd.DataFra
             print(f"Warning: Column '{column_name}' not found in data files.")
 
     return detected_errors.astype(int)
+
+def _load_from_pickle(file_name: str, output_path: str):
+    file_path = os.path.join(output_path, "mediate_files", "auto_test", file_name)
+    if os.path.exists(file_path):
+        logging.debug("loading %s from disk", file_name)
+        with open(file_path, "rb") as handle:
+            return pickle.load(handle)
+    # Check if Matelda has scanned this dataset with a different amount of labels and get Auto-Test results from there
+    logging.debug("%s not found in mediate files, checking if Matelda scanned this Dataset with a different amount of labels", file_name)
+    folders = os.listdir(os.path.dirname(output_path))
+    if len(folders) > 1:
+        for folder in folders:
+            file_path = os.path.join(os.path.dirname(output_path), folder, "mediate_files", "auto_test", file_name)
+            if os.path.exists(file_path):
+                logging.debug("Found %s in folder %s, loading from disk..", file_name, folder)
+                with open(file_path, "rb") as handle:
+                    return pickle.load(handle)
+    return None
