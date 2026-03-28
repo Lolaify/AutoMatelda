@@ -40,6 +40,10 @@ def _run_autotest(auto_test_path: str, sdc_file_name: str, output_path: str, tab
     """
     dirty_file_path = os.path.join(os.getcwd(), output_path, "aggregated_lake", table_file_name_santos)
     res_file_name = f"{os.path.splitext(os.path.basename(sdc_file_name))[0]}_on_{table_file_name_santos}"
+    auto_test_output_path = os.path.join(auto_test_path, "results/detected_outliers", res_file_name)
+    # If Auto-Test has already scanned this dataset, load results from disk instead of running Auto-Test again
+    if os.path.exists(auto_test_output_path):
+        return pd.read_table(auto_test_output_path, dtype=str)
     sdc_path = os.path.join("results/SDC", sdc_file_name)
     result = subprocess.run(
         ['conda', 'run', '-n', 'VENV', 'python3', './online_detect.py', dirty_file_path, sdc_path],
@@ -48,7 +52,6 @@ def _run_autotest(auto_test_path: str, sdc_file_name: str, output_path: str, tab
         cwd=auto_test_path
     )
     result.check_returncode()  # raises CalledProcessError if autotest failed
-    auto_test_output_path = os.path.join(auto_test_path, "results/detected_outliers", res_file_name)
     if os.path.exists(auto_test_output_path):
         auto_test_output_df = pd.read_table(auto_test_output_path, dtype=str)
     else:

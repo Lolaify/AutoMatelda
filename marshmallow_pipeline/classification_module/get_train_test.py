@@ -62,6 +62,7 @@ def get_train_test_sets_per_col(X_temp, y_temp, auto_test_labels, samples_dict, 
     y_test_cols = {}
     y_cell_ids_cols = {}
     predicted_cols = {}
+    propagated_labels = [-1 for _ in range(len(y_temp))]
     X_train, y_train, X_test, y_test, y_cell_ids, predicted = [], [], [], [], [], []    
     clusters = samples_df["cell_cluster"].unique().tolist()
     logging.debug("Clusters: %s", clusters)
@@ -101,8 +102,10 @@ def get_train_test_sets_per_col(X_temp, y_temp, auto_test_labels, samples_dict, 
                             y_train_cols[cell_col] = [y_temp[cell]]
                         else:
                             y_train_cols[cell_col].append(y_temp[cell])
+                        propagated_labels[cell] = y_temp[cell]  # Store for later analysis
                     else:
                         label_to_use = cell_cluster_final_label  # Use cluster consensus
+                        propagated_labels[cell] = label_to_use  # Store for later analysis
 
                         if(auto_test_config["integration_pipeline_option"] == 1):
                             # AUTO-TEST OVERRIDE LOGIC:
@@ -155,4 +158,4 @@ def get_train_test_sets_per_col(X_temp, y_temp, auto_test_labels, samples_dict, 
             X_train.append(X_train_cols[col][i])
             predicted.append(predicted_cols[col][i])
     logging.debug("Length of X_train: %s", len(X_train))
-    return X_train, y_train, X_test, y_test, y_cell_ids, predicted
+    return X_train, y_train, X_test, y_test, y_cell_ids, predicted, propagated_labels
