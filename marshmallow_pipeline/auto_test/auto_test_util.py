@@ -42,18 +42,21 @@ def _run_autotest(auto_test_path: str, sdc_file_name: str, output_path: str, tab
     res_file_name = f"{os.path.splitext(os.path.basename(sdc_file_name))[0]}_on_{table_file_name_santos}"
     auto_test_output_path = os.path.join(auto_test_path, "results/detected_outliers", res_file_name)
     # If Auto-Test has already scanned this dataset, load results from disk instead of running Auto-Test again
-    if os.path.exists(auto_test_output_path):
-        return pd.read_table(auto_test_output_path, dtype=str)
-    sdc_path = os.path.join("results/SDC", sdc_file_name)
-    result = subprocess.run(
-        ['conda', 'run', '-n', 'VENV', 'python3', './online_detect.py', dirty_file_path, sdc_path],
-        text=True,
-        capture_output=True,
-        cwd=auto_test_path
-    )
-    result.check_returncode()  # raises CalledProcessError if autotest failed
+    if not os.path.exists(auto_test_output_path):
+        sdc_path = os.path.join("results/SDC", sdc_file_name)
+        result = subprocess.run(
+            ['conda', 'run', '-n', 'VENV', 'python3', './online_detect.py', dirty_file_path, sdc_path],
+            text=True,
+            capture_output=True,
+            cwd=auto_test_path
+        )
+        result.check_returncode()  # raises CalledProcessError if autotest failed
     if os.path.exists(auto_test_output_path):
         auto_test_output_df = pd.read_table(auto_test_output_path, dtype=str)
+        if all(auto_test_output_df.columns == ',header,outlier,conf,dist_val,SDC') :
+            auto_test_output_df = pd.read_csv(auto_test_output_path, dtype=str)
+        if all(auto_test_output_df.columns == 'header,outlier'):
+            auto_test_output_df = pd.DataFrame(columns=['header', 'outlier', 'conf', 'dist_val', 'SDC'])
     else:
         auto_test_output_df = pd.DataFrame(columns=['header', 'outlier', 'conf', 'dist_val', 'SDC'])
     return auto_test_output_df
@@ -86,17 +89,21 @@ def _mark_detected_cells(auto_test_output_df: pd.DataFrame, dirty_df: pd.DataFra
 
         if pd.isna(column_name) or pd.isna(error_values):
             continue
-
+        if isinstance(error_values, tuple):
+            continue
         # Convert error_values from str to list[str]
         if isinstance(error_values, str):
             parsed = ast.literal_eval(error_values)
             if not isinstance(parsed, list):
-                raise ValueError(f"Expected a list literal in 'outlier', got: {type(parsed)}: {error_values!r}")
+                logging.warning(f"Expected a list literal in 'outlier', got: {type(parsed)}: {error_values!r}")
+                continue
             for item in parsed:
                 if not isinstance(item, str):
-                    raise ValueError(f"Expected all list elements to be str, got: {type(item)}: {item!r}")
+                    logging.warning(f"Expected all list elements to be str, got: {type(item)}: {item!r}")
+                    continue
         else:
-            raise ValueError(f"Expected 'outlier' to be a list, got: {type(error_values)}: {error_values!r}")
+            logging.warning(f"Expected 'outlier' to be a str, got: {type(error_values)}: {error_values!r}")
+            continue
 
 
         if column_name in dirty_df.columns:
