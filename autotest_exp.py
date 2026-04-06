@@ -104,35 +104,8 @@ experiment_output_path = get_output_path(0, config)
 
 if __name__ == "__main__":
     config_file_path = './config.ini'
-    dataset_num = 96
+
+    pipeline_options = [0, 1, 3]
+    label_multiplier = [2, 4, 6, 8, 12, 24]
     config = read_config(config_file_path)
-
-    exec = "Integration_Option_1"
-    update_config(config, "AUTO-TEST", "integration_pipeline_option", "1")
-    update_config(config, "EXPERIMENTS", "labeling_budget", f"{dataset_num * 2}")
-    experiment(exec, config_file_path, config)
-
-    exec = "Integration_Option_1"
-    update_config(config, "AUTO-TEST", "integration_pipeline_option", "1")
-    update_config(config, "EXPERIMENTS", "labeling_budget", f"{dataset_num * 6}")
-    experiment(exec, config_file_path, config)
-
-    exec = "Integration_Option_1"
-    update_config(config, "AUTO-TEST", "integration_pipeline_option", "1")
-    update_config(config, "EXPERIMENTS", "labeling_budget", f"{dataset_num * 12}")
-    experiment(exec, config_file_path, config)
-
-    exec = "Integration_Option_0"
-    update_config(config, "AUTO-TEST", "integration_pipeline_option", "0")
-    update_config(config, "EXPERIMENTS", "labeling_budget", f"{dataset_num * 2}")
-    experiment(exec, config_file_path, config)
-
-    exec = "Integration_Option_0"
-    update_config(config, "AUTO-TEST", "integration_pipeline_option", "0")
-    update_config(config, "EXPERIMENTS", "labeling_budget", f"{dataset_num * 6}")
-    experiment(exec, config_file_path, config)
-
-    exec = "Integration_Option_0"
-    update_config(config, "AUTO-TEST", "integration_pipeline_option", "0")
-    update_config(config, "EXPERIMENTS", "labeling_budget", f"{dataset_num * 12}")
-    experiment(exec, config_file_path, config)
+    executions, runs = experiments(pipeline_options, label_multiplier, config_file_path)
