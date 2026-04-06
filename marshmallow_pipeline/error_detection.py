@@ -92,7 +92,7 @@ def error_detector(
         # Use starmap to pass arguments as separate values
         results = []
         for x in col_group_file_names:
-            results.append(cluster_column_group(col_groups_dir, df_n_labels, features_dict, labels_per_cell_group, x, n_cores))
+            results.append(cluster_column_group(col_groups_dir, df_n_labels, features_dict, labels_per_cell_group, x, n_cores, auto_test_config))
         logging.info("Storing cluster_column_group results")
         for result in results:
             if result is not None:

@@ -134,8 +134,33 @@ def get_train_test_sets_per_col(X_temp, y_temp, auto_test_labels, samples_dict, 
                         y_cell_ids_cols[cell_col].append(cell)
         except Exception as e:
             logging.error("Error in get_train_test_sets: %s", e)
-    logging.info("Extra labels added due to Auto-Test overrides: %s", count_extra_labels_due_to_auto_test)
-    logging.info("Agreements between propagation and Auto-Test: %s", count_propagation_and_auto_test_agreements)
+    if (auto_test_config["integration_pipeline_option"] == 3):
+        # In this integration option, auto-test detected cells are excluded from clustering
+        # and directly added to the training set with their auto-test label (1).
+        # This means that we dont waste any user labeling effort on these cells and we also dont risk missing any errors that auto-test detected.
+        auto_test_labeled_uids = [uid for uid in range(len(auto_test_labels)) if auto_test_labels[uid] == 1]
+        for cell in auto_test_labeled_uids:
+            cell_col = cols_of_uids[cell]
+            if cell_col not in X_train_cols:
+                X_train_cols[cell_col] = [X_temp[cell]]
+            else:
+                X_train_cols[cell_col].append(X_temp[cell])
+            if cell_col not in y_train_cols:
+                y_train_cols[cell_col] = [1]
+            else:
+                y_train_cols[cell_col].append(1)
+            if cell_col not in X_test_cols:
+                X_test_cols[cell_col] = [X_temp[cell]]
+                y_test_cols[cell_col] = [y_temp[cell]]
+                y_cell_ids_cols[cell_col] = [cell]
+            else:
+                X_test_cols[cell_col].append(X_temp[cell])
+                y_test_cols[cell_col].append(y_temp[cell])
+                y_cell_ids_cols[cell_col].append(cell)
+        logging.info("Added %s extra labels to training set due to Auto-Test detected errors (integration option 3)", len(auto_test_labeled_uids))
+    if (auto_test_config["integration_pipeline_option"] == 1):
+        logging.info("Extra labels added due to Auto-Test overrides: %s", count_extra_labels_due_to_auto_test)
+        logging.info("Agreements between propagation and Auto-Test: %s", count_propagation_and_auto_test_agreements)
     logging.info("Total clean labels in training set: %s", sum([col.count(0) for col in y_train_cols.values()]))
     logging.info("Total dirty labels in training set: %s", sum([col.count(1) for col in y_train_cols.values()]))
     logging.debug("*******Time for train-test set preparation: %s", time.time() - s_time)
