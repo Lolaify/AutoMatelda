@@ -116,13 +116,13 @@ def cell_clustering(table_cluster, col_cluster, x, y, auto_test_labels, auto_tes
             cells_per_cluster[cell[1]] = [original_cell_idx]
             errors_per_cluster[cell[1]] = y[original_cell_idx]
             auto_test_labels_per_cluster[cell[1]] = auto_test_labels[original_cell_idx]
-    
-    # Add auto-test cells to a special cluster labeled -1 if integration_pipeline_option == 3
-    if integration_option == 3 and len(auto_test_cell_indices) > 0:
-        cells_per_cluster[-1] = auto_test_cell_indices
-        errors_per_cluster[-1] = sum(y[i] for i in auto_test_cell_indices)
-        auto_test_labels_per_cluster[-1] = sum(auto_test_labels[i] for i in auto_test_cell_indices)
-        set_clustering_labels = set(clustering.labels_) | {-1}
+
+    # # Add auto-test cells to a special cluster labeled -1 if integration_pipeline_option == 3
+    # if integration_option == 3 and len(auto_test_cell_indices) > 0:
+    #     cells_per_cluster[-1] = auto_test_cell_indices
+    #     errors_per_cluster[-1] = sum(y[i] for i in auto_test_cell_indices)
+    #     auto_test_labels_per_cluster[-1] = sum(auto_test_labels[i] for i in auto_test_cell_indices)
+    #     set_clustering_labels = set(clustering.labels_) | {-1}
 
     cell_clustering_dict["table_cluster"] = table_cluster
     cell_clustering_dict["col_cluster"] = col_cluster
