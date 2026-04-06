@@ -32,7 +32,7 @@ def load_experiment_result(executions: list[str], config):
     result_dfs = {}
     results_per_table = {}
     for execution in executions:
-        base_path = f"{config['DIRECTORIES']['output_dir']}_{execution}"
+        base_path = os.path.join(f"{config['DIRECTORIES']['output_dir']}_{execution}", f"_test_edbt_{os.path.dirname(config['DIRECTORIES']['tables_dir'])}")
         result_dfs[execution] = {}
         results_per_table[execution] = {}
         for run in os.listdir(base_path):
@@ -48,7 +48,9 @@ def load_experiment_result(executions: list[str], config):
 
 def add_labels_to_result_dfs(result_dfs):
     for execution in result_dfs.keys():
+        print(f"Adding labels to result dfs for execution {execution}")
         for run in result_dfs[execution].keys():
+            print(f"Adding labels to result df for run {run}")
             result_df = result_dfs[execution][run]
             conditions = [
                 (result_df["predicted"] == 1) & (result_df["label"] == 1),
@@ -78,6 +80,21 @@ def experiment(execution, config_file_path, config):
         output = pickle.load(f)
     return output
 
+def experiments(pipeline_options, labeling_budget_multipliers, config_file_path):
+    config = read_config(config_file_path)
+    path_to_dataset = os.path.join(config["DIRECTORIES"]["sandbox_dir"], config["DIRECTORIES"]["tables_dir"])
+    dataset_num = len(os.listdir(path_to_dataset))
+    labeling_budgets = [dataset_num * multiplier for multiplier in labeling_budget_multipliers]
+    execs = []
+    for pipeline_option in pipeline_options:
+        for labeling_budget in labeling_budgets:
+            print(f"Running experiment with pipeline option {pipeline_option} and labeling budget {labeling_budget}")
+            exec = f"Integration_Option_{pipeline_option}"
+            execs.append(exec)
+            update_config(config, "AUTO-TEST", "integration_pipeline_option", str(pipeline_option))
+            update_config(config, "EXPERIMENTS", "labeling_budget", str(labeling_budget))
+            experiment(exec, config_file_path, config)
+    return list(set(execs)), labeling_budgets
 """
 config = read_config(config_file_path)
 
