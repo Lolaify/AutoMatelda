@@ -73,7 +73,7 @@ def error_detector(
     if not cell_clustering_res_available:
         logging.info("Cell Clustering")
         start_time = time.time()
-        col_group_file_names = [file_name for file_name in os.listdir(col_groups_dir) if ".pickle" in file_name]
+        col_group_file_names = sorted([file_name for file_name in os.listdir(col_groups_dir) if ".pickle" in file_name])
         n_processes = min((len(col_group_file_names), int(os.cpu_count() or 0)))
         if(n_processes == 0):
             raise RuntimeError("Unable to determine CPU count")

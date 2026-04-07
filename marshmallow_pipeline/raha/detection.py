@@ -184,6 +184,7 @@ class Detection:
                             for pat in os.listdir(os.path.join(os.path.dirname(__file__), "tools", "KATARA", "knowledge-base"))]
                         algorithm_and_configurations.extend(
                             [[d, algorithm_name, configuration] for configuration in configuration_list])
+                random.seed(42)
                 random.shuffle(algorithm_and_configurations)
                 pool = multiprocessing.Pool()
                 strategy_profiles_list = pool.map(self._strategy_runner_process, algorithm_and_configurations)
@@ -282,6 +283,7 @@ class Detection:
             tuple_score = numpy.ones(d.dataframe.shape[0])
         sum_tuple_score = sum(tuple_score)
         p_tuple_score = tuple_score / sum_tuple_score
+        numpy.random.seed(42)
         d.sampled_tuple = numpy.random.choice(numpy.arange(d.dataframe.shape[0]), 1, p=p_tuple_score)[0]
         if self.VERBOSE:
             print("Tuple {} is sampled.".format(d.sampled_tuple))
@@ -293,6 +295,7 @@ class Detection:
         k = len(d.labeled_tuples) + 2
         d.labeled_tuples[d.sampled_tuple] = 1
         actual_errors_dictionary = d.get_actual_errors_dictionary()
+        random.seed(42)
         for j in range(d.dataframe.shape[1]):
             cell = (d.sampled_tuple, j)
             user_label = int(cell in actual_errors_dictionary)
@@ -347,19 +350,19 @@ class Detection:
                 predicted_labels = numpy.zeros(d.dataframe.shape[0])
             else:
                 if self.CLASSIFICATION_MODEL == "ABC":
-                    classification_model = sklearn.ensemble.AdaBoostClassifier(n_estimators=100)
+                    classification_model = sklearn.ensemble.AdaBoostClassifier(n_estimators=100, random_state=42)
                 if self.CLASSIFICATION_MODEL == "DTC":
-                    classification_model = sklearn.tree.DecisionTreeClassifier(criterion="gini")
+                    classification_model = sklearn.tree.DecisionTreeClassifier(criterion="gini", random_state=42)
                 if self.CLASSIFICATION_MODEL == "GBC":
-                    classification_model = sklearn.ensemble.GradientBoostingClassifier(n_estimators=100)
+                    classification_model = sklearn.ensemble.GradientBoostingClassifier(n_estimators=100, random_state=42)
                 if self.CLASSIFICATION_MODEL == "GNB":
                     classification_model = sklearn.naive_bayes.GaussianNB()
                 if self.CLASSIFICATION_MODEL == "KNC":
                     classification_model = sklearn.neighbors.KNeighborsClassifier(n_neighbors=1)
                 if self.CLASSIFICATION_MODEL == "SGDC":
-                    classification_model = sklearn.linear_model.SGDClassifier(loss="hinge", penalty="l2")
+                    classification_model = sklearn.linear_model.SGDClassifier(loss="hinge", penalty="l2", random_state=42)
                 if self.CLASSIFICATION_MODEL == "SVC":
-                    classification_model = sklearn.svm.SVC(kernel="sigmoid")
+                    classification_model = sklearn.svm.SVC(kernel="sigmoid", random_state=42)
                 classification_model.fit(x_train, y_train)
                 predicted_labels = classification_model.predict(x_test)
             for i, pl in enumerate(predicted_labels):

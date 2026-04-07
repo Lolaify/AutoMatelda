@@ -43,7 +43,7 @@ def get_tabls_docs(base_path, pool):
     # List all files in the base path
     csv_files = []
     for dirpath, _, filenames in os.walk(base_path):
-        for filename in filenames:
+        for filename in sorted(filenames):
             if filename.endswith(".csv"):
                 csv_files.append(os.path.join(dirpath, filename))
                 
@@ -52,10 +52,13 @@ def get_tabls_docs(base_path, pool):
     table_names = {}
     table_size_dict = {}
     with ThreadPoolExecutor() as executor:
+        # Submit all tasks while maintaining order
         futures = [executor.submit(process_document, file) for file in csv_files]
-        for future in as_completed(futures):
+
+        # Collect results in the original order (deterministic)
+        for idx, future in enumerate(futures):
             processed_text, table_name, table_size = future.result()
-            table_names[len(documents)] = table_name
+            table_names[idx] = table_name
             documents.append(processed_text)
             table_size_dict[table_name] = table_size
     return documents, table_names, table_size_dict
