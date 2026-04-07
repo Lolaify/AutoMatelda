@@ -8,6 +8,8 @@ import os
 import pickle
 from configparser import ConfigParser
 import time
+import random
+import numpy as np
 
 import marshmallow_pipeline.utils.app_logger
 from marshmallow_pipeline.error_detection import error_detector
@@ -18,6 +20,10 @@ from marshmallow_pipeline.utils.loading_results import \
     loading_columns_grouping_results
 
 def main(execution):
+    # Set seeds for reproducibility
+    random.seed(42)
+    np.random.seed(42)
+
     configs = ConfigParser()
     configs.read("./config.ini")
     labeling_budget = int(configs["EXPERIMENTS"]["labeling_budget"])
@@ -94,7 +100,7 @@ def main(execution):
 
     logging.info("Symlinking sandbox to aggregated_lake_path")
     tables_dict = {}
-    for name in os.listdir(tables_path):
+    for name in sorted(os.listdir(tables_path)):
         curr_path = os.path.join(tables_path, name)
         if os.path.isdir(curr_path):
             dirty_csv_path = os.path.join(curr_path, dirty_files_name)
@@ -169,7 +175,7 @@ def main(execution):
             column_grouping_alg,
             n_cores,
             pool
-    )
+        )
     else:
         logging.info("Column grouping results are available - loading from disk")
         
@@ -216,7 +222,7 @@ def main(execution):
     )
 
     logging.info("Removing the symlinks")
-    for name in os.listdir(tables_path):
+    for name in sorted(os.listdir(tables_path)):
         curr_path = os.path.join(tables_path, name)
         if os.path.isdir(curr_path):
             aggregated_lake_path_csv = os.path.join(aggregated_lake_path, name + ".csv")

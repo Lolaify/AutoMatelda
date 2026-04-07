@@ -148,7 +148,7 @@ def experiments(pipeline_options, labeling_budget_multipliers, config_file_path)
             update_config(config, "AUTO-TEST", "integration_pipeline_option", str(pipeline_option))
             update_config(config, "EXPERIMENTS", "labeling_budget", str(labeling_budget))
             experiment(exec, config_file_path, config)
-    return list(set(execs)), labeling_budgets
+    return sorted(list(set(execs))), labeling_budgets
 """
 config = read_config(config_file_path)
 

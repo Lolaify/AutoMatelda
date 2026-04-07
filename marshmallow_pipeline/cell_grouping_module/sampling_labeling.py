@@ -96,6 +96,7 @@ def cell_clustering(table_cluster, col_cluster, x, y, auto_test_labels, auto_tes
     clustering = MiniBatchKMeans(
         n_clusters=int(n_cell_clusters_per_col_cluster),
         batch_size=256 * n_cores,
+        random_state=42,
     ).fit(x_filtered)
     set_clustering_labels = set(clustering.labels_)
     logging.debug("KMeans - n_cell_clusters_generated: %s", len(set_clustering_labels))
@@ -187,7 +188,7 @@ def get_the_nearest_point_to_centroid(feature_vectors):
 
 def split_cell_cluster(cell_cluster_n_labels, n_cores, x_cluster, y_cluster, col_group_cell_idx, updated_cells_per_cluster, updated_errors_per_cluster, updated_cell_cluster_n_labels, cluster, min_n_labels_per_cell_group):
     try:
-        clustering = MiniBatchKMeans(n_clusters=min(len(x_cluster), math.floor(cell_cluster_n_labels[cluster]/min_n_labels_per_cell_group)), batch_size=256 * n_cores).fit(x_cluster)
+        clustering = MiniBatchKMeans(n_clusters=min(len(x_cluster), math.floor(cell_cluster_n_labels[cluster]/min_n_labels_per_cell_group)), batch_size=256 * n_cores, random_state=42).fit(x_cluster)
         set_clustering_labels = set(clustering.labels_)
         logging.info("inner cluster splitting - n_clusters: %s", len(set_clustering_labels))
         clustering_labels = clustering.labels_
@@ -269,6 +270,7 @@ def pick_samples_in_cell_cluster(cluster, updated_cells_per_cluster, updated_cel
         if updated_cell_cluster_n_labels[cluster] > 1:
             samples_labels = []
             user_samples = []
+            np.random.seed(42)
             while len(samples_feature_vectors) < updated_cell_cluster_n_labels[cluster]:
                 trial = 5
                 unique_sample = True

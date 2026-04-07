@@ -134,7 +134,7 @@ def run_santos(aggregated_lake_path: str, output_path: str):
     logging.info("Creating functinal dependencies/ground truth for santos")
     datalake_files = [
         os.path.join(santos_lake_path, file)
-        for file in os.listdir(santos_lake_path)
+        for file in sorted(os.listdir(santos_lake_path))
         if file.endswith(".csv")
     ]
     with open(
@@ -157,7 +157,7 @@ def run_santos(aggregated_lake_path: str, output_path: str):
 
     os.makedirs(santos_fd_path)
     # List all files in the source directory
-    files = os.listdir("results/")
+    files = sorted(os.listdir("results/"))
 
     for file in files:
         # Move each file to destination Directory
