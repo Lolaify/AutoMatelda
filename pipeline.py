@@ -196,6 +196,7 @@ def main(execution):
         predicted_all,
         auto_test_labels_all,
         propagated_labels_all,
+        training_labels_used_all,
         y_labeled_by_user_all,
         unique_cells_local_index_collection,
         samples, global_n_userl_labels
@@ -251,6 +252,8 @@ def main(execution):
         pickle.dump(auto_test_labels_all, handle)
     with open(os.path.join(final_results_path, "propagated_labels_all.pickle"), "wb+") as handle:
         pickle.dump(propagated_labels_all, handle)
+    with open(os.path.join(final_results_path, "training_labels_used_all.pickle"), "wb+") as handle:
+        pickle.dump(training_labels_used_all, handle)
     with open(os.path.join(final_results_path, "y_labeled_by_user_all.pickle"), "wb+") as handle:
         pickle.dump(y_labeled_by_user_all, handle)
     with open(os.path.join(final_results_path, "unique_cells_local_index_collection.pickle"), "wb+") as handle:
@@ -268,6 +271,7 @@ def main(execution):
         predicted_all,
         auto_test_labels_all,
         propagated_labels_all,
+        training_labels_used_all,
         y_labeled_by_user_all,
         unique_cells_local_index_collection,
         samples,

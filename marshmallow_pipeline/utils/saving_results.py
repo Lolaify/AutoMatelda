@@ -82,7 +82,7 @@ def get_classification_results(
     except Exception as e:
         logging.error("Error: %s", e)
 
-def process_cell_cell_results(cell_key, key, unique_cells_local_index_collection, y_local_cell_ids, y_test_all, col_cluster_prediction, all_tables_dict, samples, auto_test_labels, propagated_labels):
+def process_cell_cell_results(cell_key, key, unique_cells_local_index_collection, y_local_cell_ids, y_test_all, col_cluster_prediction, all_tables_dict, samples, auto_test_labels, propagated_labels, training_labels_used):
     try:
         cell_local_idx = unique_cells_local_index_collection[key][cell_key]
         y_cell_ids = {id: idx for idx, id in enumerate(y_local_cell_ids[key])}
@@ -99,14 +99,15 @@ def process_cell_cell_results(cell_key, key, unique_cells_local_index_collection
             "predicted": col_cluster_prediction[y_local_idx],
             "label": y_test_all[key][y_local_idx],
             "auto_test_label": auto_test_labels[y_local_idx] if auto_test_labels else None,
-            "propagated_label": propagated_labels[y_local_idx] if propagated_labels else None
+            "propagated_label": propagated_labels[y_local_idx] if propagated_labels else None,
+            "training_label": training_labels_used[y_local_idx] if training_labels_used else None
         }
     except Exception as e:
         logging.error("Error: ", e)
         return None
     return res_dict
 
-def process_col_group_cell_results(key, unique_cells_local_index_collection, y_local_cell_ids, y_test_all, predicted_all, auto_test_labels_all, propagated_labels_all, all_tables_dict, samples):
+def process_col_group_cell_results(key, unique_cells_local_index_collection, y_local_cell_ids, y_test_all, predicted_all, auto_test_labels_all, propagated_labels_all, training_labels_used_all, all_tables_dict, samples):
     all_cell_results = []
     cell_local_ids = unique_cells_local_index_collection[key]
     swapped_cell_local_ids = {v: (k[0], k[1], k[2]) for k, v in cell_local_ids.items()}
@@ -115,14 +116,17 @@ def process_col_group_cell_results(key, unique_cells_local_index_collection, y_l
         if swapped_cell_local_ids[j] in samples:
             col_cluster_prediction[j] = samples[swapped_cell_local_ids[j]]
     
-    # Extract auto_test_labels and propagated_labels for this column group
+    # Extract auto_test_labels, propagated_labels, and training_labels_used for this column group
     auto_test_labels = auto_test_labels_all.get(key) if auto_test_labels_all else None
     propagated_labels = propagated_labels_all.get(key) if propagated_labels_all else None
-    
+    training_labels_used = training_labels_used_all.get(key) if training_labels_used_all else None
+
     for cell_key in unique_cells_local_index_collection[key]:
-        cell_res = process_cell_cell_results(cell_key, key, unique_cells_local_index_collection,\
-                                        y_local_cell_ids, y_test_all, col_cluster_prediction,\
-                                            all_tables_dict, samples, auto_test_labels, propagated_labels)
+        cell_res = process_cell_cell_results(
+            cell_key, key, unique_cells_local_index_collection,
+            y_local_cell_ids, y_test_all, col_cluster_prediction,
+            all_tables_dict, samples, auto_test_labels, propagated_labels, training_labels_used
+        )
         if cell_res:
             all_cell_results.append(cell_res)
     all_predicted_as_one = 0
@@ -138,6 +142,7 @@ def create_predictions_dict(
     predicted_all,
     auto_test_labels_all,
     propagated_labels_all,
+    training_labels_used_all,
     unique_cells_local_index_collection,
     samples
 ):
@@ -155,24 +160,24 @@ def create_predictions_dict(
             futures.append(executor.submit(process_batches, batch,
                                            unique_cells_local_index_collection,
                                            y_local_cell_ids, y_test_all, predicted_all,
-                                           auto_test_labels_all, propagated_labels_all,
+                                           auto_test_labels_all, propagated_labels_all, training_labels_used_all,
                                            all_tables_dict, samples))
         for future in futures:
             rows_list.extend(future.result())
 
     results_df = pd.DataFrame(rows_list, columns=[
         "column_group", "table_id", "table_name", "table_shape", "col_id", "col_name",
-        "cell_idx", "cell_value", "predicted", "label", "auto_test_label", "propagated_label"
+        "cell_idx", "cell_value", "predicted", "label", "auto_test_label", "propagated_label", "training_label"
     ])
     return results_df
 
-def process_batches(batch, unique_cells_local_index_collection, y_local_cell_ids, y_test_all, predicted_all, auto_test_labels_all, propagated_labels_all, all_tables_dict, samples):
+def process_batches(batch, unique_cells_local_index_collection, y_local_cell_ids, y_test_all, predicted_all, auto_test_labels_all, propagated_labels_all, training_labels_used_all, all_tables_dict, samples):
     all_results = []
     for key in batch:
         all_results.extend(process_col_group_cell_results(key,
                                                           unique_cells_local_index_collection,
                                                           y_local_cell_ids, y_test_all, predicted_all,
-                                                          auto_test_labels_all, propagated_labels_all,
+                                                          auto_test_labels_all, propagated_labels_all, training_labels_used_all,
                                                           all_tables_dict, samples))
     return all_results
 
@@ -240,6 +245,7 @@ def get_all_results(
     predicted_all,
     auto_test_labels_all,
     propagated_labels_all,
+    training_labels_used_all,
     y_labeled_by_user_all,
     unique_cells_local_index_collection,
     samples,
@@ -265,6 +271,7 @@ def get_all_results(
             predicted_all,
             auto_test_labels_all,
             propagated_labels_all,
+            training_labels_used_all,
             unique_cells_local_index_collection,
             samples,
         )
@@ -291,6 +298,8 @@ def get_all_results_from_disk(output_path, tables_path, dirty_file_names, clean_
         auto_test_labels_all = pickle.load(file)
     with open(os.path.join(output_path, "results", "final_results", "propagated_labels_all.pickle"), "rb") as file:
         propagated_labels_all = pickle.load(file)
+    with open(os.path.join(output_path, "results", "final_results", "training_labels_used_all.pickle"), "rb") as file:
+        training_labels_used_all = pickle.load(file)
     with open(os.path.join(output_path, "results", "final_results", "y_labeled_by_user_all.pickle"), "rb") as file:
         y_labeled_by_user_all = pickle.load(file)
     with open(os.path.join(output_path, "results", "final_results", "unique_cells_local_index_collection.pickle"), "rb") as file:
@@ -310,6 +319,7 @@ def get_all_results_from_disk(output_path, tables_path, dirty_file_names, clean_
         predicted_all,
         auto_test_labels_all,
         propagated_labels_all,
+        training_labels_used_all,
         y_labeled_by_user_all,
         unique_cells_local_index_collection,
         samples,

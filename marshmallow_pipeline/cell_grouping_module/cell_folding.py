@@ -87,7 +87,7 @@ def cell_cluster_sampling_labeling(cell_clustering_df, cell_cluster_cells_dict, 
                 logging.info("start classification for cluster %s", str(cell_clustering_df["col_cluster"].values[0]))
                 gbc, predicted = classify(X_train, y_train, X_test)
             elif classification_mode == 1:
-                X_train, y_train, X_test, y_test, y_cell_ids, predicted, propagated_labels = get_train_test_sets_per_col(
+                X_train, y_train, X_test, y_test, y_cell_ids, predicted, propagated_labels, training_labels_used = get_train_test_sets_per_col(
                     X_temp, y_temp, auto_test_labels, samples_dict, cell_clustering_df, cell_cluster_cells_dict["datacells_uids"], output_path, auto_test_config
                 )
                 
@@ -102,6 +102,7 @@ def cell_cluster_sampling_labeling(cell_clustering_df, cell_cluster_cells_dict, 
         "y_cell_ids": y_cell_ids,
         "predicted": predicted,
         "propagated_labels": propagated_labels if classification_mode == 1 else None,
+        "training_labels_used": training_labels_used if classification_mode == 1 else None,
         "original_data_keys_temp": cell_cluster_cells_dict["original_data_keys_temp"],
         "universal_samples": universal_samples,
         "X_labeled_by_user": X_labeled_by_user,

@@ -141,6 +141,7 @@ def error_detector(
     predicted_all = {}
     auto_test_labels_all = {}
     propagated_labels_all = {}
+    training_labels_used_all = {}
     y_test_all = {}
     y_local_cell_ids = {}
     X_labeled_by_user_all = {}
@@ -161,6 +162,7 @@ def error_detector(
             predicted_all.update(result["predicted_all"])
             auto_test_labels_all.update(result["auto_test_labels"])
             propagated_labels_all.update(result["propagated_labels"])
+            training_labels_used_all.update(result["training_labels_used"])
             y_test_all.update(result["y_test_all"])
             y_local_cell_ids.update(result["y_local_cell_ids"])
             X_labeled_by_user_all.update(result["X_labeled_by_user_all"])
@@ -192,6 +194,7 @@ def error_detector(
         predicted_all,
         auto_test_labels_all,
         propagated_labels_all,
+        training_labels_used_all,
         y_labeled_by_user_all,
         unique_cells_local_index_collection,
         selected_samples,
@@ -298,6 +301,7 @@ def test(df_n_labels, output_path, all_cell_clusters_records, cell_cluster_cells
             "predicted_all": predicted_all,
             "auto_test_labels": {(str(table_cluster), str(col_cluster)): cell_cluster_cells_dict["auto_test_labels"]},
             "propagated_labels": {(str(table_cluster), str(col_cluster)): cell_cluster_sampling_labeling_dict["propagated_labels"]},
+            "training_labels_used": {(str(table_cluster), str(col_cluster)): cell_cluster_sampling_labeling_dict["training_labels_used"]},
             "y_test_all": y_test_all,
             "y_local_cell_ids": y_local_cell_ids,
             "X_labeled_by_user_all": X_labeled_by_user_all,
