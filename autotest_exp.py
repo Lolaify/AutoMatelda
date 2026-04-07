@@ -35,6 +35,8 @@ def load_experiment_result(executions: list[str], config):
     results_per_table = {}
     for execution in executions:
         base_path = os.path.join(f"{config['DIRECTORIES']['output_dir']}_{execution}")
+        if(not os.path.exists(base_path)):
+            continue
         if f"_test_edbt_{os.path.dirname(config['DIRECTORIES']['tables_dir'])}" in os.listdir(base_path):
             base_path = os.path.join(base_path, f"_test_edbt_{os.path.dirname(config['DIRECTORIES']['tables_dir'])}")
         result_dfs[execution] = {}
@@ -103,7 +105,7 @@ def get_analysis_df(result_dfs, to_analyse):
             analysis = pd.Series()
             analysis['execution'] = execution
             analysis['run'] = run
-            analysis['labels'] = int(re.findall(r'\d+', run)[0])
+            analysis['labels'] = int(re.findall(r'\d+', run)[-1])
             analysis["TP"] = value_counts["TP"] if "TP" in value_counts else 0
             analysis["FP"] = value_counts["FP"] if "FP" in value_counts else 0
             analysis["TN"] = value_counts["TN"] if "TN" in value_counts else 0
