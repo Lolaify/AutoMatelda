@@ -3,6 +3,8 @@ import os
 import pickle
 import numpy as np
 import pipeline
+import pandas as pd
+import re
 
 def read_config(file_path):
     config = configparser.ConfigParser()
@@ -32,7 +34,9 @@ def load_experiment_result(executions: list[str], config):
     result_dfs = {}
     results_per_table = {}
     for execution in executions:
-        base_path = os.path.join(f"{config['DIRECTORIES']['output_dir']}_{execution}", f"_test_edbt_{os.path.dirname(config['DIRECTORIES']['tables_dir'])}")
+        base_path = os.path.join(f"{config['DIRECTORIES']['output_dir']}_{execution}")
+        if f"_test_edbt_{os.path.dirname(config['DIRECTORIES']['tables_dir'])}" in os.listdir(base_path):
+            base_path = os.path.join(base_path, f"_test_edbt_{os.path.dirname(config['DIRECTORIES']['tables_dir'])}")
         result_dfs[execution] = {}
         results_per_table[execution] = {}
         for run in os.listdir(base_path):
@@ -48,22 +52,71 @@ def load_experiment_result(executions: list[str], config):
 
 def add_labels_to_result_dfs(result_dfs):
     for execution in result_dfs.keys():
-        print(f"Adding labels to result dfs for execution {execution}")
         for run in result_dfs[execution].keys():
-            print(f"Adding labels to result df for run {run}")
             result_df = result_dfs[execution][run]
-            conditions = [
-                (result_df["predicted"] == 1) & (result_df["label"] == 1),
-                (result_df["predicted"] == 1) & (result_df["label"] == 0),
-                (result_df["predicted"] == 0) & (result_df["label"] == 0),
-                (result_df["predicted"] == 0) & (result_df["label"] == 1),
-            ]
-            choices = ["TP", "FP", "TN", "FN"]
-            result_dfs[execution][run]["result"] = np.select(conditions, choices, default="Unknown")
-
-            result_dfs[execution][run]["auto_test_overwrite"] = (result_df["auto_test_label"] == 1) & (result_df["propagated_label"] == 0)
+            result_df = _add_result_label(result_df, "predicted", "result")
+            result_df["auto_test_overwrite"] = (result_df["auto_test_label"] == 1) & (result_df["propagated_label"] == 0)
+            result_dfs[execution][run] = result_df
     return result_dfs
 
+def _add_result_label(result_df, predicted, result):
+    conditions = [
+        (result_df[predicted] == 1) & (result_df["label"] == 1),
+        (result_df[predicted] == 1) & (result_df["label"] == 0),
+        (result_df[predicted] == 0) & (result_df["label"] == 0),
+        (result_df[predicted] == 0) & (result_df["label"] == 1),
+    ]
+    choices = ["TP", "FP", "TN", "FN"]
+    result_df[result] = np.select(conditions, choices, default="Unknown")
+    return result_df
+
+def add_training_labels_to_result_dfs(result_dfs):
+    # Add Training Labels to result_dfs:
+    for execution in result_dfs.keys():
+        for run in result_dfs[execution].keys():
+            df = result_dfs[execution][run]
+            if execution == "Integration_Option_0":
+                df['training_label'] = df['propagated_label']
+            elif execution in ["Integration_Option_1", "Integration_Option_3"]:
+                df['training_label'] = (df['propagated_label'] == 1) | (
+                            df['auto_test_label'] == 1)
+                df['training_label'] = df['training_label'].astype(int)
+            if 'training_label' in df:
+                result_dfs[execution][run] = _add_result_label(df, "training_label", "training_result")
+    return result_dfs
+
+def add_labels_to_results_per_table(results_per_table):
+    for execution in results_per_table.keys():
+        for run in results_per_table[execution].keys():
+            df = pd.DataFrame(results_per_table[execution][run]).T
+            df["total_cells"] = df["tp"] + df["fp"] + df["fn"] + df["tn"]
+            results_per_table[execution][run] = df.T
+    return results_per_table
+
+def get_analysis_df(result_dfs, to_analyse):
+    all_analysis = []
+    precision, recall, f_score = {}, {}, {}
+    for execution in result_dfs.keys():
+        for run in result_dfs[execution].keys():
+            result_df = result_dfs[execution][run]
+            value_counts = result_df[to_analyse].value_counts()
+            analysis = pd.Series()
+            analysis['execution'] = execution
+            analysis['run'] = run
+            analysis['labels'] = int(re.findall(r'\d+', run)[0])
+            analysis["TP"] = value_counts["TP"] if "TP" in value_counts else 0
+            analysis["FP"] = value_counts["FP"] if "FP" in value_counts else 0
+            analysis["TN"] = value_counts["TN"] if "TN" in value_counts else 0
+            analysis["FN"] = value_counts["FN"] if "FN" in value_counts else 0
+
+            analysis["precision"] = analysis["TP"] / (analysis["TP"] + analysis["FP"])
+            analysis["recall"] = analysis["TP"] / (analysis["TP"] + analysis["FN"])
+            analysis["f_score"] = 2 * (analysis["precision"] * analysis["recall"]) / (
+                        analysis["precision"] + analysis["recall"])
+
+            all_analysis.append(analysis)
+
+    return pd.DataFrame(all_analysis)
 
 def experiment(execution, config_file_path, config):
     result_df_path = os.path.join(
@@ -83,6 +136,7 @@ def experiment(execution, config_file_path, config):
 def experiments(pipeline_options, labeling_budget_multipliers, config_file_path):
     config = read_config(config_file_path)
     path_to_dataset = os.path.join(config["DIRECTORIES"]["sandbox_dir"], config["DIRECTORIES"]["tables_dir"])
+    print(f"Running experiments on dataset at {path_to_dataset}")
     dataset_num = len(os.listdir(path_to_dataset))
     labeling_budgets = [dataset_num * multiplier for multiplier in labeling_budget_multipliers]
     execs = []
