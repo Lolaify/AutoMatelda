@@ -118,11 +118,14 @@ def main():
 
     # Set dataset
     dataset_name = "DGov_Typo_subsets/DGov_Typo_high_TP_ratio"
-    execution_name = "Integration_Option_0"
+    execution_name_base = "Integration_Option_0"
+    execution_name_1 = f"{execution_name_base}_Run1"
+    execution_name_2 = f"{execution_name_base}_Run2"
     labeling_budget = 50  # Use a reasonable budget for testing
 
     print(f"Dataset: {dataset_name}")
-    print(f"Execution: {execution_name}")
+    print(f"Execution (Run 1): {execution_name_1}")
+    print(f"Execution (Run 2): {execution_name_2}")
     print(f"Labeling Budget: {labeling_budget}")
     print()
 
@@ -143,17 +146,17 @@ def main():
 
     print("RUN 1: Running pipeline first time...")
     print("-" * 80)
-    cleanup_output(config, execution_name)
+    cleanup_output(config, execution_name_1)
     save_config(config, config_file_path)
     try:
-        pipeline.main(execution_name)
+        pipeline.main(execution_name_1)
     except Exception as e:
         print(f"ERROR in Run 1: {e}")
         save_config(original_config, config_file_path)
         return False
 
     # Get output path and load results
-    output_path_1 = get_output_path(execution_name, config)
+    output_path_1 = get_output_path(execution_name_1, config)
     results_df_1 = load_results_df(output_path_1)
 
     if results_df_1 is None:
@@ -166,17 +169,17 @@ def main():
 
     print("RUN 2: Running pipeline second time...")
     print("-" * 80)
-    cleanup_output(config, execution_name)
+    cleanup_output(config, execution_name_2)
     save_config(config, config_file_path)
     try:
-        pipeline.main(execution_name)
+        pipeline.main(execution_name_2)
     except Exception as e:
         print(f"ERROR in Run 2: {e}")
         save_config(original_config, config_file_path)
         return False
 
     # Get output path and load results
-    output_path_2 = get_output_path(execution_name, config)
+    output_path_2 = get_output_path(execution_name_2, config)
     results_df_2 = load_results_df(output_path_2)
 
     if results_df_2 is None:
