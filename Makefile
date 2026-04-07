@@ -1,6 +1,9 @@
 run:
 	conda run --no-capture-output -n automatelda python pipeline.py
 
+experiment:
+	conda run --no-capture-output -n automatelda python autotest_exp.py
+
 install:
 	conda create -n automatelda python=3.10
 	conda run --no-capture-output -n automatelda pip install -r requirements.txt
