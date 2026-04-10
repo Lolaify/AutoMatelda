@@ -258,7 +258,7 @@ def get_selected_strategies_via_ground_truth(dataset_dictionary, strategies_coun
             f1_measure[(na, strategy_name)] = strategies_performance[strategy_name][2]
     sorted_f1_measure = sorted(f1_measure.items(), key=operator.itemgetter(1))
     worst_strategies = {s: f1 for s, f1 in sorted_f1_measure[:strategies_count]}
-    random.seed(42)
+    # Note: random seed should be set globally in pipeline.py main()
     random_strategies = {s: f1 for s, f1 in [sorted_f1_measure[i] for i in
                                              random.sample(range(len(sorted_f1_measure)), strategies_count)]}
     best_strategies = {s: f1 for s, f1 in sorted_f1_measure[-strategies_count:]}
