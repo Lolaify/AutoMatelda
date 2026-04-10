@@ -11,7 +11,7 @@ from marshmallow_pipeline.classification_module.get_train_test import get_train_
 
 
 def col_clu_cell_clustering(
-    n_cell_clusters_per_col_cluster, table_cluster, col_cluster, group_df, features_dict, n_cores, labels_per_cell_group
+    n_cell_clusters_per_col_cluster, table_cluster, col_cluster, group_df, features_dict, n_cores, labels_per_cell_group, auto_test_config
 ):
     logging.debug("Processing cluster %s", str(col_cluster))
     cell_cluster_cells_dict = get_cells_in_cluster(group_df, col_cluster, features_dict)
@@ -21,6 +21,7 @@ def col_clu_cell_clustering(
         cell_cluster_cells_dict["X_temp"],
         cell_cluster_cells_dict["y_temp"],
         cell_cluster_cells_dict["auto_test_labels"],
+        auto_test_config,
         n_cell_clusters_per_col_cluster,
         n_cores,
         labels_per_cell_group
@@ -86,7 +87,7 @@ def cell_cluster_sampling_labeling(cell_clustering_df, cell_cluster_cells_dict, 
                 logging.info("start classification for cluster %s", str(cell_clustering_df["col_cluster"].values[0]))
                 gbc, predicted = classify(X_train, y_train, X_test)
             elif classification_mode == 1:
-                X_train, y_train, X_test, y_test, y_cell_ids, predicted, propagated_labels = get_train_test_sets_per_col(
+                X_train, y_train, X_test, y_test, y_cell_ids, predicted, propagated_labels, training_labels_used = get_train_test_sets_per_col(
                     X_temp, y_temp, auto_test_labels, samples_dict, cell_clustering_df, cell_cluster_cells_dict["datacells_uids"], output_path, auto_test_config
                 )
                 
@@ -101,6 +102,7 @@ def cell_cluster_sampling_labeling(cell_clustering_df, cell_cluster_cells_dict, 
         "y_cell_ids": y_cell_ids,
         "predicted": predicted,
         "propagated_labels": propagated_labels if classification_mode == 1 else None,
+        "training_labels_used": training_labels_used if classification_mode == 1 else None,
         "original_data_keys_temp": cell_cluster_cells_dict["original_data_keys_temp"],
         "universal_samples": universal_samples,
         "X_labeled_by_user": X_labeled_by_user,
@@ -115,7 +117,7 @@ def cell_cluster_sampling_labeling(cell_clustering_df, cell_cluster_cells_dict, 
     return cell_cluster_sampling_labeling_dict, cell_clustering_df, samples_dict, n_user_labeled_cells
 
 
-def cluster_column_group(col_groups_dir, df_n_labels, features_dict, labels_per_cell_group, file_name, n_cores):
+def cluster_column_group(col_groups_dir, df_n_labels, features_dict, labels_per_cell_group, file_name, n_cores, auto_test_config):
     logging.info("Clustering column group: %s", file_name)
     table_clusters = []
     cell_cluster_cells_dict_all = {}
@@ -157,7 +159,8 @@ def cluster_column_group(col_groups_dir, df_n_labels, features_dict, labels_per_
                 group_df,
                 features_dict,
                 n_cores,
-                labels_per_cell_group
+                labels_per_cell_group,
+                auto_test_config
             )
             cell_cluster_cells_dict_all[table_cluster][
                 col_cluster

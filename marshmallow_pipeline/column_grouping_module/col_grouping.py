@@ -13,6 +13,7 @@ from scipy.spatial import distance
 from marshmallow_pipeline.column_grouping_module.chartypes_distributions_features import (
     CharTypeDistribution,
 )
+from marshmallow_pipeline.utils.seed_manager import get_random_state
 from marshmallow_pipeline.column_grouping_module.data_type_features import (
     DataTypeFeatures,
 )
@@ -78,6 +79,7 @@ def col_grouping(
                 clusters = MiniBatchKMeans(
                     n_clusters=min(max_n_col_groups, len(X)),
                     batch_size=256 * n_cores,
+                    random_state=get_random_state(),
                 ).fit_predict(X)
 
             else:

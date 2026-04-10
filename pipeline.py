@@ -8,6 +8,8 @@ import os
 import pickle
 from configparser import ConfigParser
 import time
+import random
+import numpy as np
 
 import marshmallow_pipeline.utils.app_logger
 from marshmallow_pipeline.error_detection import error_detector
@@ -20,6 +22,14 @@ from marshmallow_pipeline.utils.loading_results import \
 def main(execution):
     configs = ConfigParser()
     configs.read("./config.ini")
+    
+    # Set seeds for reproducibility if random_seed > 0
+    random_seed = int(configs["EXPERIMENTS"].get("random_seed", 0))
+    marshmallow_pipeline.utils.seed_manager.set_random_seed(random_seed)
+    if random_seed > 0:
+        random.seed(random_seed)
+        np.random.seed(random_seed)
+
     labeling_budget = int(configs["EXPERIMENTS"]["labeling_budget"])
     exp_name = configs["EXPERIMENTS"]["exp_name"]
     n_cores = int(configs["EXPERIMENTS"]["n_cores"])
@@ -94,7 +104,7 @@ def main(execution):
 
     logging.info("Symlinking sandbox to aggregated_lake_path")
     tables_dict = {}
-    for name in os.listdir(tables_path):
+    for name in sorted(os.listdir(tables_path)):
         curr_path = os.path.join(tables_path, name)
         if os.path.isdir(curr_path):
             dirty_csv_path = os.path.join(curr_path, dirty_files_name)
@@ -169,7 +179,7 @@ def main(execution):
             column_grouping_alg,
             n_cores,
             pool
-    )
+        )
     else:
         logging.info("Column grouping results are available - loading from disk")
         
@@ -190,6 +200,7 @@ def main(execution):
         predicted_all,
         auto_test_labels_all,
         propagated_labels_all,
+        training_labels_used_all,
         y_labeled_by_user_all,
         unique_cells_local_index_collection,
         samples, global_n_userl_labels
@@ -216,7 +227,7 @@ def main(execution):
     )
 
     logging.info("Removing the symlinks")
-    for name in os.listdir(tables_path):
+    for name in sorted(os.listdir(tables_path)):
         curr_path = os.path.join(tables_path, name)
         if os.path.isdir(curr_path):
             aggregated_lake_path_csv = os.path.join(aggregated_lake_path, name + ".csv")
@@ -245,6 +256,8 @@ def main(execution):
         pickle.dump(auto_test_labels_all, handle)
     with open(os.path.join(final_results_path, "propagated_labels_all.pickle"), "wb+") as handle:
         pickle.dump(propagated_labels_all, handle)
+    with open(os.path.join(final_results_path, "training_labels_used_all.pickle"), "wb+") as handle:
+        pickle.dump(training_labels_used_all, handle)
     with open(os.path.join(final_results_path, "y_labeled_by_user_all.pickle"), "wb+") as handle:
         pickle.dump(y_labeled_by_user_all, handle)
     with open(os.path.join(final_results_path, "unique_cells_local_index_collection.pickle"), "wb+") as handle:
@@ -262,6 +275,7 @@ def main(execution):
         predicted_all,
         auto_test_labels_all,
         propagated_labels_all,
+        training_labels_used_all,
         y_labeled_by_user_all,
         unique_cells_local_index_collection,
         samples,

@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.distance import euclidean
 from sklearn.cluster import MiniBatchKMeans
+from marshmallow_pipeline.utils.seed_manager import get_random_state
 
 
 def get_n_labels(cluster_sizes_df, labeling_budget, min_num_labes_per_col_cluster):
@@ -45,7 +46,7 @@ def get_n_labels(cluster_sizes_df, labeling_budget, min_num_labes_per_col_cluste
     return cluster_sizes_df
 
 
-def cell_clustering(table_cluster, col_cluster, x, y, auto_test_labels,  n_cell_clusters_per_col_cluster, n_cores, labels_per_cell_group):
+def cell_clustering(table_cluster, col_cluster, x, y, auto_test_labels, auto_test_config, n_cell_clusters_per_col_cluster, n_cores, labels_per_cell_group):
     # logging.info(
     #     "Cell Clustering - table_cluster: %s, col_cluster: %s",
     #     table_cluster,
@@ -66,28 +67,64 @@ def cell_clustering(table_cluster, col_cluster, x, y, auto_test_labels,  n_cell_
         "cells_per_cluster": [],
         "errors_per_cluster": [],
     }
-    n_cell_clusters_per_col_cluster = min(len(x), n_cell_clusters_per_col_cluster)
+    
+    # Filter out auto-test cells (auto_test_labels == 1) if integration_pipeline_option == 3
+    integration_option = auto_test_config.get("integration_pipeline_option", 0)
+    auto_test_cell_indices = []
+    
+    if integration_option == 3:
+        # Identify cells with auto_test_labels == 1
+        auto_test_cell_indices = [i for i, label in enumerate(auto_test_labels) if label == 1]
+        
+        # Filter x and y to exclude auto-test cells
+        x_filtered = [x[i] for i in range(len(x)) if i not in auto_test_cell_indices]
+        y_filtered = [y[i] for i in range(len(y)) if i not in auto_test_cell_indices]
+        
+        # If all cells are auto-test cells, we can't cluster
+        if len(x_filtered) == 0:
+            logging.warning("All cells are auto-test cells, cannot cluster")
+            x_filtered = x
+            y_filtered = y
+            auto_test_cell_indices = []
+    else:
+        x_filtered = x
+        y_filtered = y
+    
+    n_cell_clusters_per_col_cluster = min(len(x_filtered), n_cell_clusters_per_col_cluster)
     logging.debug(
         "KMeans - n_cell_clusters_per_col_cluster: %s", n_cell_clusters_per_col_cluster
     )
     clustering = MiniBatchKMeans(
         n_clusters=int(n_cell_clusters_per_col_cluster),
         batch_size=256 * n_cores,
-    ).fit(x)
+        random_state=get_random_state(),
+    ).fit(x_filtered)
     set_clustering_labels = set(clustering.labels_)
     logging.debug("KMeans - n_cell_clusters_generated: %s", len(set_clustering_labels))
     clustering_labels = clustering.labels_
+    
+    # Build mapping from filtered cell indices to original cell indices
+    filtered_cell_original_indices = [i for i in range(len(x)) if i not in auto_test_cell_indices]
+    
     for cell in enumerate(clustering_labels):
+        original_cell_idx = filtered_cell_original_indices[cell[0]]
         if cell[1] in cells_per_cluster:
-            cells_per_cluster[cell[1]].append(cell[0])
-            if y[cell[0]] == 1:
+            cells_per_cluster[cell[1]].append(original_cell_idx)
+            if y[original_cell_idx] == 1:
                 errors_per_cluster[cell[1]] += 1
-            if auto_test_labels[cell[0]] == 1:
+            if auto_test_labels[original_cell_idx] == 1:
                 auto_test_labels_per_cluster[cell[1]] += 1
         else:
-            cells_per_cluster[cell[1]] = [cell[0]]
-            errors_per_cluster[cell[1]] = y[cell[0]]
-            auto_test_labels_per_cluster[cell[1]] = auto_test_labels[cell[0]]
+            cells_per_cluster[cell[1]] = [original_cell_idx]
+            errors_per_cluster[cell[1]] = y[original_cell_idx]
+            auto_test_labels_per_cluster[cell[1]] = auto_test_labels[original_cell_idx]
+
+    # # Add auto-test cells to a special cluster labeled -1 if integration_pipeline_option == 3
+    # if integration_option == 3 and len(auto_test_cell_indices) > 0:
+    #     cells_per_cluster[-1] = auto_test_cell_indices
+    #     errors_per_cluster[-1] = sum(y[i] for i in auto_test_cell_indices)
+    #     auto_test_labels_per_cluster[-1] = sum(auto_test_labels[i] for i in auto_test_cell_indices)
+    #     set_clustering_labels = set(clustering.labels_) | {-1}
 
     cell_clustering_dict["table_cluster"] = table_cluster
     cell_clustering_dict["col_cluster"] = col_cluster
@@ -152,7 +189,7 @@ def get_the_nearest_point_to_centroid(feature_vectors):
 
 def split_cell_cluster(cell_cluster_n_labels, n_cores, x_cluster, y_cluster, col_group_cell_idx, updated_cells_per_cluster, updated_errors_per_cluster, updated_cell_cluster_n_labels, cluster, min_n_labels_per_cell_group):
     try:
-        clustering = MiniBatchKMeans(n_clusters=min(len(x_cluster), math.floor(cell_cluster_n_labels[cluster]/min_n_labels_per_cell_group)), batch_size=256 * n_cores).fit(x_cluster)
+        clustering = MiniBatchKMeans(n_clusters=min(len(x_cluster), math.floor(cell_cluster_n_labels[cluster]/min_n_labels_per_cell_group)), batch_size=256 * n_cores, random_state=get_random_state()).fit(x_cluster)
         set_clustering_labels = set(clustering.labels_)
         logging.info("inner cluster splitting - n_clusters: %s", len(set_clustering_labels))
         clustering_labels = clustering.labels_
@@ -234,6 +271,7 @@ def pick_samples_in_cell_cluster(cluster, updated_cells_per_cluster, updated_cel
         if updated_cell_cluster_n_labels[cluster] > 1:
             samples_labels = []
             user_samples = []
+            # Note: random seed should be set globally in pipeline.py main()
             while len(samples_feature_vectors) < updated_cell_cluster_n_labels[cluster]:
                 trial = 5
                 unique_sample = True

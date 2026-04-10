@@ -73,7 +73,7 @@ def error_detector(
     if not cell_clustering_res_available:
         logging.info("Cell Clustering")
         start_time = time.time()
-        col_group_file_names = [file_name for file_name in os.listdir(col_groups_dir) if ".pickle" in file_name]
+        col_group_file_names = sorted([file_name for file_name in os.listdir(col_groups_dir) if ".pickle" in file_name])
         n_processes = min((len(col_group_file_names), int(os.cpu_count() or 0)))
         if(n_processes == 0):
             raise RuntimeError("Unable to determine CPU count")
@@ -92,7 +92,7 @@ def error_detector(
         # Use starmap to pass arguments as separate values
         results = []
         for x in col_group_file_names:
-            results.append(cluster_column_group(col_groups_dir, df_n_labels, features_dict, labels_per_cell_group, x, n_cores))
+            results.append(cluster_column_group(col_groups_dir, df_n_labels, features_dict, labels_per_cell_group, x, n_cores, auto_test_config))
         logging.info("Storing cluster_column_group results")
         for result in results:
             if result is not None:
@@ -141,6 +141,7 @@ def error_detector(
     predicted_all = {}
     auto_test_labels_all = {}
     propagated_labels_all = {}
+    training_labels_used_all = {}
     y_test_all = {}
     y_local_cell_ids = {}
     X_labeled_by_user_all = {}
@@ -161,6 +162,7 @@ def error_detector(
             predicted_all.update(result["predicted_all"])
             auto_test_labels_all.update(result["auto_test_labels"])
             propagated_labels_all.update(result["propagated_labels"])
+            training_labels_used_all.update(result["training_labels_used"])
             y_test_all.update(result["y_test_all"])
             y_local_cell_ids.update(result["y_local_cell_ids"])
             X_labeled_by_user_all.update(result["X_labeled_by_user_all"])
@@ -192,6 +194,7 @@ def error_detector(
         predicted_all,
         auto_test_labels_all,
         propagated_labels_all,
+        training_labels_used_all,
         y_labeled_by_user_all,
         unique_cells_local_index_collection,
         selected_samples,
@@ -298,6 +301,7 @@ def test(df_n_labels, output_path, all_cell_clusters_records, cell_cluster_cells
             "predicted_all": predicted_all,
             "auto_test_labels": {(str(table_cluster), str(col_cluster)): cell_cluster_cells_dict["auto_test_labels"]},
             "propagated_labels": {(str(table_cluster), str(col_cluster)): cell_cluster_sampling_labeling_dict["propagated_labels"]},
+            "training_labels_used": {(str(table_cluster), str(col_cluster)): cell_cluster_sampling_labeling_dict["training_labels_used"]},
             "y_test_all": y_test_all,
             "y_local_cell_ids": y_local_cell_ids,
             "X_labeled_by_user_all": X_labeled_by_user_all,

@@ -249,6 +249,7 @@ def run_strategies(self, d, char_set, pool):
                         [[d, algorithm_name, configuration] for configuration in configuration_list])
                     logging.debug("RVD_orig configurations: %s", len(configuration_list))
 
+            # Note: random seed should be set globally in pipeline.py main()
             random.shuffle(algorithm_and_configurations)
             _strategy_runner_process_ = partial(_strategy_runner_process, d)
             strategy_profiles_list = pool.map(
