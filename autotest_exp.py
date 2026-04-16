@@ -18,6 +18,9 @@ def save_config(config, file_path):
     with open(file_path, 'w') as configfile:
         config.write(configfile)
 
+def get_datasets_num(result_dfs):
+    return result_dfs[list(result_dfs.keys())[0]][list(result_dfs[list(result_dfs.keys())[0]].keys())[0]]['table_id'].nunique()
+
 def get_output_path(exec, config):
     return os.path.join(
         config["DIRECTORIES"]["output_dir"] + f"_{exec}",
@@ -77,12 +80,14 @@ def add_training_labels_to_result_dfs(result_dfs):
     for execution in result_dfs.keys():
         for run in result_dfs[execution].keys():
             df = result_dfs[execution][run]
-            if execution == "Integration_Option_0":
-                df['training_label'] = df['propagated_label']
-            elif execution in ["Integration_Option_1", "Integration_Option_3"]:
-                df['training_label'] = (df['propagated_label'] == 1) | (
-                            df['auto_test_label'] == 1)
-                df['training_label'] = df['training_label'].astype(int)
+            if 'training_label' not in df:
+                print('approximating label used in training')
+                if execution == "Integration_Option_0":
+                    df['training_label'] = df['propagated_label']
+                elif execution in ["Integration_Option_1", "Integration_Option_3"]:
+                    df['training_label'] = (df['propagated_label'] == 1) | (
+                                df['auto_test_label'] == 1)
+                    df['training_label'] = df['training_label'].astype(int)
             if 'training_label' in df:
                 result_dfs[execution][run] = _add_result_label(df, "training_label", "training_result")
     return result_dfs
@@ -140,7 +145,7 @@ def experiments(pipeline_options, labeling_budget_multipliers, config_file_path)
     path_to_dataset = os.path.join(config["DIRECTORIES"]["sandbox_dir"], config["DIRECTORIES"]["tables_dir"])
     print(f"Running experiments on dataset at {path_to_dataset}")
     dataset_num = len(os.listdir(path_to_dataset))
-    labeling_budgets = [dataset_num * multiplier for multiplier in labeling_budget_multipliers]
+    labeling_budgets = [round(dataset_num * multiplier) for multiplier in labeling_budget_multipliers]
     execs = []
     for pipeline_option in pipeline_options:
         for labeling_budget in labeling_budgets:
@@ -149,7 +154,11 @@ def experiments(pipeline_options, labeling_budget_multipliers, config_file_path)
             execs.append(exec)
             update_config(config, "AUTO-TEST", "integration_pipeline_option", str(pipeline_option))
             update_config(config, "EXPERIMENTS", "labeling_budget", str(labeling_budget))
-            experiment(exec, config_file_path, config)
+            try:
+                experiment(exec, config_file_path, config)
+            except Exception as e:
+                print(f"Exception occurred while running Experiment. Exception: {e}")
+
     return sorted(list(set(execs))), labeling_budgets
 """
 config = read_config(config_file_path)
@@ -162,6 +171,6 @@ if __name__ == "__main__":
     config_file_path = './config.ini'
 
     pipeline_options = [0, 1, 3]
-    label_multiplier = [2, 4, 6, 8, 12, 24]
+    label_multiplier = [0, 0.125, 0.25, 0.5, 0.75, 1, 2, 4, 6, 8, 12, 24]
     config = read_config(config_file_path)
     executions, runs = experiments(pipeline_options, label_multiplier, config_file_path)
