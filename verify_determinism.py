@@ -116,6 +116,16 @@ def main():
     original_config = read_config(config_file_path)
     config = read_config(config_file_path)
 
+    # Get current random_seed setting
+    random_seed = config.get("EXPERIMENTS", "random_seed", fallback="0")
+    print(f"Current random_seed setting: {random_seed}")
+    if random_seed == "0":
+        print("⚠️  WARNING: random_seed is set to 0 (non-deterministic mode)")
+        print("   For determinism testing, please set random_seed to a positive value (e.g., 42)")
+    else:
+        print(f"✓ Running in deterministic mode with seed={random_seed}")
+    print()
+
     # Set dataset
     dataset_name = "DGov_Typo_subsets/DGov_Typo_high_TP_ratio"
     execution_name_base = "Integration_Option_0"
@@ -205,12 +215,16 @@ def main():
         print("=" * 80)
         print("✅ SUCCESS: Pipeline is DETERMINISTIC!")
         print("   Both runs produced identical results_df")
+        print(f"   Seed configuration (random_seed={random_seed}) is working correctly")
         print("=" * 80)
         return True
     else:
         print("=" * 80)
         print("❌ FAILURE: Pipeline is NOT DETERMINISTIC")
         print("   Results differ between runs")
+        if random_seed != "0":
+            print(f"   Even with random_seed={random_seed} set, results are not deterministic")
+            print("   Please check seed_manager configuration in pipeline.py")
         print("=" * 80)
         return False
 

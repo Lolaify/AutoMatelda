@@ -20,12 +20,16 @@ from marshmallow_pipeline.utils.loading_results import \
     loading_columns_grouping_results
 
 def main(execution):
-    # Set seeds for reproducibility
-    random.seed(42)
-    np.random.seed(42)
-
     configs = ConfigParser()
     configs.read("./config.ini")
+    
+    # Set seeds for reproducibility if random_seed > 0
+    random_seed = int(configs["EXPERIMENTS"].get("random_seed", 0))
+    marshmallow_pipeline.utils.seed_manager.set_random_seed(random_seed)
+    if random_seed > 0:
+        random.seed(random_seed)
+        np.random.seed(random_seed)
+
     labeling_budget = int(configs["EXPERIMENTS"]["labeling_budget"])
     exp_name = configs["EXPERIMENTS"]["exp_name"]
     n_cores = int(configs["EXPERIMENTS"]["n_cores"])
