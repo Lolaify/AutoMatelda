@@ -98,9 +98,9 @@ def process_cell_cell_results(cell_key, key, unique_cells_local_index_collection
             "cell_value": cell_key[3],
             "predicted": col_cluster_prediction[y_local_idx],
             "label": y_test_all[key][y_local_idx],
-            "auto_test_label": auto_test_labels[y_local_idx] if auto_test_labels else None,
-            "propagated_label": propagated_labels[y_local_idx] if propagated_labels else None,
-            "training_label": training_labels_used[y_local_idx] if training_labels_used else None
+            "auto_test_label": auto_test_labels[cell_local_idx] if auto_test_labels else None,
+            "propagated_label": propagated_labels[cell_local_idx] if propagated_labels else None,
+            "training_label": training_labels_used[cell_local_idx] if training_labels_used else None
         }
     except Exception as e:
         logging.error("Error: ", e)
