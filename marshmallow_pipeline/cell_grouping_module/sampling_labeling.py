@@ -415,20 +415,26 @@ def sampling(cell_clustering_dict, x, y, dirty_cell_values, original_data_keys_t
 
 
 
-def labeling(samples_dict):
+def labeling(samples_dict, auto_test_labels_per_cluster, auto_test_config):
     try:
         logging.debug("Labeling")
         samples_dict.update({"final_label_to_be_propagated": []})
         for cell_cluster_idx, _ in enumerate(samples_dict["cell_cluster"]):
-            if len(samples_dict["samples"][cell_cluster_idx]) != 0:
-                if len(set(samples_dict["labels"][cell_cluster_idx])) == 1:
+            labels = samples_dict["labels"][cell_cluster_idx]
+            if(auto_test_config.get("integration_pipeline_option", 0) == 2):
+                if(mode(labels) == 0):
+                    logging.debug(f"User labeled cluster as 0, adding {auto_test_labels_per_cluster[cell_cluster_idx]} auto-test labels of 1")
+                auto_test_labels = [1] * auto_test_labels_per_cluster[cell_cluster_idx]
+                labels = labels + auto_test_labels
+            if len(labels) != 0:
+                if len(set(labels)) == 1:
                     samples_dict["final_label_to_be_propagated"].append(
-                        samples_dict["labels"][cell_cluster_idx][0]
+                        labels[0]
                     )
                 else:
-                    logging.debug("*******Labeling - mode: %s", mode(samples_dict["labels"][cell_cluster_idx]))
+                    logging.debug("*******Labeling - mode: %s", mode(labels))
                     samples_dict["final_label_to_be_propagated"].append(
-                        mode(samples_dict["labels"][cell_cluster_idx])
+                        mode(labels)
                     )
             else:
                 samples_dict["final_label_to_be_propagated"].append(None)

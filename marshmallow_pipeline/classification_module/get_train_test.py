@@ -109,7 +109,7 @@ def get_train_test_sets_per_col(X_temp, y_temp, auto_test_labels, samples_dict, 
                         label_to_use = cell_cluster_final_label  # Use cluster consensus
                         propagated_labels[cell] = label_to_use  # Store for later analysis
 
-                        if(auto_test_config["integration_pipeline_option"] == 1):
+                        if auto_test_config.get("integration_pipeline_option", 0) in [1, 2]:
                             # AUTO-TEST OVERRIDE LOGIC:
                             # If auto-test detected an error (1) but cluster consensus says clean (0),
                             # trust auto-test and label as error. This prevents missing errors.
