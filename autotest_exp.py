@@ -21,6 +21,17 @@ def save_config(config, file_path):
 def get_datasets_num(result_dfs):
     return result_dfs[list(result_dfs.keys())[0]][list(result_dfs[list(result_dfs.keys())[0]].keys())[0]]['table_id'].nunique()
 
+def get_columns_num(path_to_dataset):
+    columns_num = 0
+    for table in os.listdir(path_to_dataset):
+        table_path = os.path.join(path_to_dataset, table, 'dirty.csv')
+        if os.path.exists(table_path) and os.path.isfile(table_path):
+            df = pd.read_csv(table_path)
+            columns_num += len(df.columns)
+        else:
+            print(f"Warning: {table_path} does not exist or is not a file.")
+    return columns_num
+
 def get_output_path(exec, config):
     return os.path.join(
         config["DIRECTORIES"]["output_dir"] + f"_{exec}",
@@ -175,23 +186,23 @@ def final_experiment(config_file_path, dry_run=False, set_seed=False):
 
     update_config(config, "EXPERIMENTS", "final_result_df", "0")
     if not set_seed:
-        update_config(config, "SEED", "seed", "0")
+        update_config(config, "EXPERIMENTS", "random_seed", "0")
 
-    labeling_budget_multipliers = [1, 2, 4, 6, 8, 12, 24]
+    labeling_budget_multipliers = [0.04, 0.07, 0.1, 0.2, 0.3, 0.5, 0.7, 1, 2]
+
     path_to_dataset = os.path.join(config["DIRECTORIES"]["sandbox_dir"], config["DIRECTORIES"]["tables_dir"])
-    dataset_num = len(os.listdir(path_to_dataset))
-
+    columns_num = get_columns_num("datasets/DGov_Typo")
     for i in [1, 2, 3, 4, 5]:
         if(set_seed):
             seed = i * 100
-            update_config(config, "SEED", "seed", str(seed))
+            update_config(config, "EXPERIMENTS", "random_seed", str(seed))
         print(f"Running final experiment execution {i}")
         update_config(config, "EXPERIMENTS", "exp_name", f"final_execution_{i}")
-        for pipeline_option in [0, 1, 3]:
+        for pipeline_option in [0, 1, 2, 3]:
             print(f"Running final experiment with pipeline option {pipeline_option}")
             update_config(config, "AUTO-TEST", "integration_pipeline_option", str(pipeline_option))
             for labeling_budget_multiplier in labeling_budget_multipliers:
-                labeling_budget = round(dataset_num * labeling_budget_multiplier)
+                labeling_budget = round(columns_num * labeling_budget_multiplier)
                 print(f"Running final experiment with pipeline option {pipeline_option} and {labeling_budget} labels ({labeling_budget_multiplier} per table) on dataset at {path_to_dataset}")
                 update_config(config, "EXPERIMENTS", "labeling_budget", str(labeling_budget))
                 try:
