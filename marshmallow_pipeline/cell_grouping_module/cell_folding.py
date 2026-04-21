@@ -50,7 +50,7 @@ def cell_cluster_sampling_labeling(cell_clustering_df, cell_cluster_cells_dict, 
             original_data_keys_temp = cell_cluster_cells_dict["original_data_keys_temp"]
             samples_dict, cell_clustering_df, n_user_labeled_cells = sampling(cell_clustering_df, X_temp, y_temp, value_temp, original_data_keys_temp, n_cores, tables_tuples_dict, min_n_labels_per_cell_group)
             logging.info("Start labeling for cluster %s", str(cell_clustering_df["col_cluster"].values[0]))
-            samples_dict = labeling(samples_dict)
+            samples_dict = labeling(samples_dict, cell_clustering_df["auto_test_labels_per_cluster"].values[0], auto_test_config)
             universal_samples = {}
             logging.debug("len samples: %s", str(len(samples_dict["cell_cluster"])))
             for cell_cluster_idx, _ in enumerate(samples_dict["cell_cluster"]):
