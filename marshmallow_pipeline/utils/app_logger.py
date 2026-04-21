@@ -17,4 +17,5 @@ def setup_logging(logs_dir: str):
         filename=os.environ.get("LOGFILE", os.path.join(logs_dir, "app.log")),
         level=logging.DEBUG,
         format="%(asctime)s %(levelname)s %(module)s - %(funcName)s: %(message)s",
+        force=True
     )
