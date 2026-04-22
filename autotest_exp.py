@@ -203,7 +203,7 @@ def final_experiment(config_file_path, dry_run=False, set_seed=False):
             update_config(config, "AUTO-TEST", "integration_pipeline_option", str(pipeline_option))
             for labeling_budget_multiplier in labeling_budget_multipliers:
                 labeling_budget = round(columns_num * labeling_budget_multiplier)
-                print(f"Running final experiment with pipeline option {pipeline_option} and {labeling_budget} labels ({labeling_budget_multiplier} per table) on dataset at {path_to_dataset}")
+                print(f"Running final experiment with pipeline option {pipeline_option} and {labeling_budget} labels ({labeling_budget_multiplier} per column) on dataset at {path_to_dataset}")
                 update_config(config, "EXPERIMENTS", "labeling_budget", str(labeling_budget))
                 try:
                     if not dry_run:
@@ -232,17 +232,53 @@ def load_final_results():
         if integration_option not in results[dataset].keys():
             results[dataset][integration_option] = {}
         for subfolder in os.listdir(f"final_experiment/{folder}"):
-            execution = re.findall("^_final_execution_\d", subfolder)[0]
+            execution = re.findall("^_final_execution_\d", subfolder)[0][17:]
             if execution not in results[dataset][integration_option].keys():
                 results[dataset][integration_option][execution] = {}
             if subfolder.endswith("_labels"):
-                labels = re.findall("\d+_labels", subfolder)[-1]
+                labels = re.findall("\d+_labels", subfolder)[-1][:-7]
                 results[dataset][integration_option][execution][labels] = read_results(f"final_experiment/{folder}/{subfolder}/results")
             else:
                 for subsubfolder in os.listdir(f"final_experiment/{folder}/{subfolder}"):
-                    labels = re.findall("\d+_labels", subsubfolder)[-1]
+                    labels = re.findall("\d+_labels", subsubfolder)[-1][:-7]
                     results[dataset][integration_option][execution][labels] = read_results(f"final_experiment/{folder}/{subfolder}/{subsubfolder}/results")
     return results
+
+def get_final_analysis_df(results_dict):
+    def iter_leaves(d, path=()):
+        for k, v in d.items():
+            current_path = path + (k,)
+            if k == "scores_all.pickle":
+                yield current_path, v
+            elif isinstance(v, dict):
+                yield from iter_leaves(v, current_path)
+            else:
+                yield current_path, v
+
+    analysis_df = {
+        "dataset": [],
+        "integration_option": [],
+        "execution": [],
+        "labels": [],
+        "n_samples": [],
+        "total_recall": [],
+        "total_precision": [],
+        "total_fscore": [],
+        "total_tp": [],
+        "total_fp": [],
+        "total_tn": [],
+        "total_fn": [],
+    }
+    for path, leaf in iter_leaves(results_dict):
+        analysis_df["dataset"].append(path[0])
+        analysis_df["integration_option"].append(path[1])
+        analysis_df["execution"].append(path[2])
+        analysis_df["labels"].append(path[3])
+        for key, value in leaf.items():
+            analysis_df[key].append(value)
+
+    return pd.DataFrame(analysis_df)
+
 """
 config = read_config(config_file_path)
 
