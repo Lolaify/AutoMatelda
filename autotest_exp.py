@@ -212,6 +212,37 @@ def final_experiment(config_file_path, dry_run=False, set_seed=False):
                         print(f"Dry run")
                 except Exception as e:
                     print(f"Exception occurred while running Final Experiment. Exception: {e}")
+
+def read_results(results_dir):
+    res = {}
+    files = ["scores_all.pickle"]
+    for file in files:
+        path = os.path.join(results_dir, file)
+        if not os.path.exists(path): continue
+        with open(path, "rb") as f:
+            res[file] = pickle.load(f)
+    return res
+
+def load_final_results():
+    results = {}
+    for folder in os.listdir("final_experiment"):
+        dataset, integration_option = folder.split("_Integration_Option_")
+        if dataset not in results.keys():
+            results[dataset] = {}
+        if integration_option not in results[dataset].keys():
+            results[dataset][integration_option] = {}
+        for subfolder in os.listdir(f"final_experiment/{folder}"):
+            execution = re.findall("^_final_execution_\d", subfolder)[0]
+            if execution not in results[dataset][integration_option].keys():
+                results[dataset][integration_option][execution] = {}
+            if subfolder.endswith("_labels"):
+                labels = re.findall("\d+_labels", subfolder)[-1]
+                results[dataset][integration_option][execution][labels] = read_results(f"final_experiment/{folder}/{subfolder}/results")
+            else:
+                for subsubfolder in os.listdir(f"final_experiment/{folder}/{subfolder}"):
+                    labels = re.findall("\d+_labels", subsubfolder)[-1]
+                    results[dataset][integration_option][execution][labels] = read_results(f"final_experiment/{folder}/{subfolder}/{subsubfolder}/results")
+    return results
 """
 config = read_config(config_file_path)
 
