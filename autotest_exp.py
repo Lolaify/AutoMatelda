@@ -137,17 +137,17 @@ def get_analysis_df(result_dfs, to_analyse):
     return pd.DataFrame(all_analysis)
 
 def experiment(execution, config_file_path, config):
-    result_df_path = os.path.join(
+    scores_all_path = os.path.join(
         get_output_path(execution, config),
-        "results/results_df.pickle")
+        "results/scores_all.pickle")
 
-    if not os.path.exists(result_df_path):
+    if not os.path.exists(scores_all_path):
         old_config = read_config(config_file_path)
         save_config(config, config_file_path)
         pipeline.main(execution)
         save_config(old_config, config_file_path)
 
-    with open(result_df_path, "rb") as f:
+    with open(scores_all_path, "rb") as f:
         output = pickle.load(f)
     return output
 
@@ -172,14 +172,14 @@ def experiments(pipeline_options, labeling_budget_multipliers, config_file_path)
 
     return sorted(list(set(execs))), labeling_budgets
 
-def final_experiment(config_file_path, dry_run=False, set_seed=False):
+def final_experiment(config_file_path, dry_run=False, set_seed=True):
     """
     Run all Pipeline Options 5 times
     """
     config = read_config(config_file_path)
     update_config(config, "DIRECTORIES", "sandbox_dir", "datasets")
-    update_config(config, "DIRECTORIES", "tables_dir", "DGov_Typo")
-    update_config(config, "DIRECTORIES", "output_dir", "final_experiment/DGov_Typo")
+    update_config(config, "DIRECTORIES", "tables_dir", "DGov_Typo_subsets/DGov_Typo_10")
+    update_config(config, "DIRECTORIES", "output_dir", "final_experiment/DGov_Typo_10")
 
     update_config(config, "CELL_GROUPING", "cell_feature_generator_enabled", "1")
     update_config(config, "CELL_GROUPING", "cell_clustering_res_available", "0")
@@ -218,7 +218,9 @@ def read_results(results_dir):
     files = ["scores_all.pickle"]
     for file in files:
         path = os.path.join(results_dir, file)
-        if not os.path.exists(path): continue
+        if not os.path.exists(path):
+            print(f"{path} does not exist")
+            continue
         with open(path, "rb") as f:
             res[file] = pickle.load(f)
     return res
@@ -232,15 +234,15 @@ def load_final_results():
         if integration_option not in results[dataset].keys():
             results[dataset][integration_option] = {}
         for subfolder in os.listdir(f"final_experiment/{folder}"):
-            execution = re.findall("^_final_execution_\d", subfolder)[0][17:]
+            execution = int(re.findall("^_final_execution_\d", subfolder)[0][17:])
             if execution not in results[dataset][integration_option].keys():
                 results[dataset][integration_option][execution] = {}
             if subfolder.endswith("_labels"):
-                labels = re.findall("\d+_labels", subfolder)[-1][:-7]
+                labels = int(re.findall("\d+_labels", subfolder)[-1][:-7])
                 results[dataset][integration_option][execution][labels] = read_results(f"final_experiment/{folder}/{subfolder}/results")
             else:
                 for subsubfolder in os.listdir(f"final_experiment/{folder}/{subfolder}"):
-                    labels = re.findall("\d+_labels", subsubfolder)[-1][:-7]
+                    labels = int(re.findall("\d+_labels", subsubfolder)[-1][:-7])
                     results[dataset][integration_option][execution][labels] = read_results(f"final_experiment/{folder}/{subfolder}/{subsubfolder}/results")
     return results
 
@@ -288,7 +290,7 @@ experiment_output_path = get_output_path(0, config)
 
 if __name__ == "__main__":
     config_file_path = './config.ini'
-    final_experiment(config_file_path, dry_run=True)
+    final_experiment(config_file_path, dry_run=False)
     # pipeline_options = [0, 1, 3]
     # label_multiplier = [0, 0.125, 0.25, 0.5, 0.75, 1, 2, 4, 6, 8, 12, 24]
     # config = read_config(config_file_path)
