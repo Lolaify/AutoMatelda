@@ -7,8 +7,8 @@ import os
 import pandas as pd
 import random
 
-dgov_typo_path = "/home/micro/Documents/Code/AutoMatelda/datasets/DGov_Typo"
-save_to = "/home/micro/Documents/Code/AutoMatelda/datasets/DGov_SO"
+dgov_typo_path = "datasets/DGov_Typo"
+save_to = "datasets/DGov_SO"
 
 random.seed(42)
 
@@ -40,6 +40,8 @@ for table in sorted(os.listdir(dgov_typo_path)):
     dataset_sizes[table] = clean_datasets[table].shape[0] * clean_datasets[table].shape[1]
     n_cells += dataset_sizes[table]
 
+print(f"loaded {len(clean_datasets)} tables with a total of {n_cells} cells")
+
 # --- Add Synthetic Errors to Dataset ---
 dirty_datasets = copy.deepcopy(clean_datasets)
 num_errors = math.floor(n_cells * 0.05)
@@ -52,7 +54,7 @@ for _ in range(0, num_errors):
     df = clean_datasets[table]
     excluded_values = set(df[df.columns[col]].values)
     dirty_datasets[table].iat[row, col] = get_random_value(excluded_values)
-print(f"introduced {num_errors} errors")
+print(f"introduced {num_errors} errors ({(num_errors / n_cells) * 100}% of all cells) into the dataset")
 
 # --- Save Dataset ---
 print(f"Saving Dataset to {save_to}")
