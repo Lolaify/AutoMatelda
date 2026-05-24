@@ -42,7 +42,8 @@ def main(execution):
         "auto_test_path": configs["AUTO-TEST"]["auto_test_path"],
         "sdc_file_name" : configs["AUTO-TEST"]["sdc_file_name"],
         "rerun"         : bool(int(configs["AUTO-TEST"]["rerun"])),
-        "integration_pipeline_option" : int(configs["AUTO-TEST"]["integration_pipeline_option"])
+        "integration_pipeline_option" : int(configs["AUTO-TEST"]["integration_pipeline_option"]),
+        "override_threshold": float(configs["AUTO-TEST"].get("override_threshold", 0.0))
     }
 
     raha_config = {}

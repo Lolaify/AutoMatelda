@@ -80,6 +80,16 @@ def get_train_test_sets_per_col(X_temp, y_temp, auto_test_labels, samples_dict, 
             cell_cluster_final_label = samples_df[samples_df["cell_cluster"] == key][
                 "final_label_to_be_propagated"
             ].values[0]
+
+            integration_option = auto_test_config.get("integration_pipeline_option", 0)
+            if integration_option == 2 and len(cells_per_cluster[key]) > 0:
+                at_dirty_count = sum(1 for c in cells_per_cluster[key] if auto_test_labels[c] == 1)
+                at_ratio = at_dirty_count / len(cells_per_cluster[key])
+                override_threshold = auto_test_config.get("override_threshold", 0.0)
+                if at_ratio > override_threshold and cell_cluster_final_label == 0:
+                    logging.info("Variant 2: Overriding cluster user label from clean to dirty based on Auto-Test threshold (ratio: %.2f > %s)", at_ratio, override_threshold)
+                    cell_cluster_final_label = 1
+
             if len(cell_cluster_samples) == 0:
                 for cell in cells_per_cluster[key]:
                     cell_col = cols_of_uids[cell]
