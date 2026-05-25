@@ -28,6 +28,8 @@ def get_output_path(exec, config, labeling_budget):
     )
 
 def copy_reusable_features(src_dir, dst_dir, include_cell_clustering=False):
+    if src_dir and dst_dir and os.path.abspath(src_dir) == os.path.abspath(dst_dir):
+        return
     os.makedirs(dst_dir, exist_ok=True)
 
     # Files to copy for tg/cg/features (independent of budget/tau)
@@ -151,6 +153,17 @@ def run_tau_experiment(tables_dir_override=None):
             print(f"Executing -> Tau: {tau} | Budget: {budget}")
             print(f"Output Directory: {out_dir}")
             print(f"==========================================")
+
+            # Optimization: Skip if results already exist
+            results_pickle = os.path.join(out_dir, "results", "scores_all.pickle")
+            if os.path.exists(results_pickle):
+                print(f"[Skip] Results already exist for Tau: {tau} | Budget: {budget}. Skipping pipeline execution.")
+                if first_run_ever:
+                    base_src_dir = out_dir
+                    first_run_ever = False
+                if first_run_tau == 0:
+                    budget_src_dir = out_dir
+                continue
 
             try:
                 pipeline.main(exec_name)
