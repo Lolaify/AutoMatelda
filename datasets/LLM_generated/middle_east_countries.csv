@@ -1,0 +1,11 @@
+Country,Capital,Population_M,Tourism Portal,Currency
+Lebanon,Beirut,5.5,https://www.lebanontraveler.com,LBP
+Jordan,Amman,11.3,https://visitjordan.com,JOD
+Syria,Damascus,22.1,https://mota.gov.sy,SYP
+Israel,Jerusalem,9.8,https://goisrael.com,ILS
+Palestine,Ramallah,4.9,https://visitpalestine.ps,ILS
+Egypt,Cairo,111.0,https://experienceegypt.eg,EGP
+Cedar Tree,Forest,0.0,not a url,WOOD
+Hummus Plate,Kitchen,0.0,www broken,FOOD
+Iraq,Baghdad,45.0,https://ur.gov.iq,IQD
+Turkey,Ankara,85.0,https://goturkiye.com,TRY
