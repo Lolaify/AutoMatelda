@@ -53,7 +53,7 @@ def read_csv(path: str, low_memory: bool = False) -> pd.DataFrame:
 def get_info(sandbox_base_path, sandbox_name, dirty_file_names, clean_file_names):
     dataset_names= []
     for dir in os.listdir(os.path.join(sandbox_base_path, sandbox_name)):
-        if dir != ".DS_Store" and dir != sandbox_name:
+        if dir != ".DS_Store" and dir != sandbox_name and not os.path.isdir(os.path.join(sandbox_base_path, sandbox_name, dir)):
             dataset_names.append(dir)
 
     total_errors = 0

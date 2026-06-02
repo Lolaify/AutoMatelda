@@ -23,7 +23,7 @@ def get_cells_features(sandbox_path, output_path, table_char_set_dict, tables_di
         features_dict_list = []
         tables_tuples_list = []
         for table in list_dirs_in_snd:
-             if not table.startswith("."):
+             if not table.startswith(".") or os.path.isdir(os.path.join(sandbox_path, table)):
                 features_dict_tmp, tables_tuples_tmp, column_feature_names = \
                     generate_cell_features(table, sandbox_path, output_path, tables_dict[table], table_char_set_dict, dirty_files_name, clean_files_name, pool, raha_config, auto_test_config)
                 features_dict_list.append(features_dict_tmp)
